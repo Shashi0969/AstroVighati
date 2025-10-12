@@ -1,0 +1,11 @@
+# 🧩 Required libraries for AstroVighati Pro Elite
+pillow
+requests
+pyswisseph
+geopy
+timezonefinder
+skyfield
+matplotlib
+numpy
+pandas
+reportlab
