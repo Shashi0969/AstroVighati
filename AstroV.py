@@ -1,14 +1,14 @@
-# GUI Version - 6.0 (Nakshatra Syllables)
+# GUI Version - 6.2 (Nakshatra Syllables)
 
 """ AstroVighati Pro Elite: Advanced Vedic Astrology Suite
-Version: 6.0 with Integrated Knowledge Base and Advanced Varga Analysis
+Version: 6.2 with Integrated Knowledge Base and Advanced Varga Analysis
 
 Description:
 This script creates a comprehensive desktop application for Vedic astrology
 using Python's Tkinter library. It features a modular, tab-based interface
 and a high-precision, Sidereal (Lahiri Ayanamsa) calculation engine.
 
-This version (v6.0) introduces a new feature based on authentic Vedic
+This version (v6.2) introduces a new feature based on authentic Vedic
 sources (Avakahada Chakra) in the 'Nakshatra Explorer' tab:
 - Adds a new "🗣️ Name Syllables" sub-tab for a quick reference of all 27
   Nakshatra padas and their corresponding name syllables.
@@ -116,7 +116,7 @@ def install_if_missing(package: str) -> None:
 
 # --- Dependency Check Block ---
 print("="*60)
-print("🚀 Initializing AstroVighati Pro Elite v6.0")
+print("🚀 Initializing AstroVighati Pro Elite v6.2")
 print("   Checking all required dependencies...")
 print("="*60)
 for pkg in required_packages:
@@ -1320,7 +1320,7 @@ class AstroVighatiElite:
     - Holds the central data state (`self.chart_data`) for the loaded chart.
     """
 
-    __VERSION__ = "6.0 (Nakshatra Syllables)" # <-- VERSION BUMPED
+    __VERSION__ = "6.2 (Nakshatra Syllables)" # <-- VERSION BUMPED
 
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
@@ -1679,7 +1679,7 @@ class KundliGeneratorTab(ttk.Frame):
         birth_frame.grid_columnconfigure(1, weight=1)
 
         ttk.Label(birth_frame, text="Name:").grid(row=0, column=0, sticky='w', pady=5, padx=5)
-        self.name_var = tk.StringVar(value="Shashank")
+        self.name_var = tk.StringVar()
         ttk.Entry(birth_frame, textvariable=self.name_var).grid(row=0, column=1, sticky='ew', pady=5, padx=5)
 
         ttk.Label(birth_frame, text="Date (DD/MM/YYYY):").grid(row=1, column=0, sticky='w', pady=5, padx=5)
@@ -1710,15 +1710,15 @@ class KundliGeneratorTab(ttk.Frame):
         location_frame.grid_columnconfigure(1, weight=1)
 
         ttk.Label(location_frame, text="City:").grid(row=0, column=0, sticky='w', pady=5, padx=5)
-        self.city_var = tk.StringVar(value="Modinagar")
+        self.city_var = tk.StringVar(value="Ghaziabad")
         ttk.Entry(location_frame, textvariable=self.city_var).grid(row=0, column=1, sticky='ew', pady=5, padx=5)
 
         ttk.Label(location_frame, text="Latitude:").grid(row=1, column=0, sticky='w', pady=5, padx=5)
-        self.lat_var = tk.StringVar(value="28.8344")
+        self.lat_var = tk.StringVar(value="28.6692")
         ttk.Entry(location_frame, textvariable=self.lat_var).grid(row=1, column=1, sticky='ew', pady=5, padx=5)
 
         ttk.Label(location_frame, text="Longitude:").grid(row=2, column=0, sticky='w', pady=5, padx=5)
-        self.lon_var = tk.StringVar(value="77.5699")
+        self.lon_var = tk.StringVar(value="77.4538")
         ttk.Entry(location_frame, textvariable=self.lon_var).grid(row=2, column=1, sticky='ew', pady=5, padx=5)
 
         ttk.Label(location_frame, text="Timezone Offset (UTC):").grid(row=3, column=0, sticky='w', pady=5, padx=5)
@@ -2734,7 +2734,7 @@ class EnhancedNakshatraTab(ttk.Frame):
     Purpose:
     Acts as a simple, read-only encyclopedia for all 27 Nakshatras.
     
-    NEW (v6.0): Includes a new sub-tab for name syllables and adds
+    NEW (v6.2): Includes a new sub-tab for name syllables and adds
     syllable data to the main details view.
     """
     def __init__(self, parent: ttk.Notebook, app: 'AstroVighatiElite') -> None:
