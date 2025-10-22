@@ -16,7 +16,7 @@ sources (Avakahada Chakra) in the 'Nakshatra Explorer' tab:
   name syllables.
 - Rectifies a dependency-checking error (PIL vs. Pillow).
 
-This version retains all features from v6.1, including:
+This version retains all features from v6.0, including:
 - Python type hinting across the entire codebase.
 - A resizable, paned layout in the Vighati Rectifier tab.
 - Support for seconds-level precision in the Vighati sunrise time input.
@@ -333,7 +333,6 @@ class EnhancedAstrologicalData:
             list: A list of dictionaries, where each dictionary is a planet.
         """
         return [
-            # ... (Full planet data as provided in the original code) ...
             {
                 "name": "Sun", "sanskrit": "Surya", "devanagari": "सूर्य", "symbol": "☉",
                 "karaka": "Atmakaraka (Soul), Father, King, Authority, Ego, Health, Vitality, Right Eye",
@@ -2891,28 +2890,32 @@ class EnhancedNakshatraTab(ttk.Frame):
         # Create a formatted string for display
         details = f"""
 ╔══════════════════════════════════════════════════════════════════╗
-║  {title.center(62)}  ║
+║  {title.center(62)}                                              ║
 ╚══════════════════════════════════════════════════════════════════╝
+
 CORE ATTRIBUTES:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Ruling Lord      : {nak['lord']}
 Presiding Deity  : {nak.get('deity', 'N/A')}
 Symbol           : {nak.get('symbol', 'N/A')}
+
 CLASSIFICATION:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 Gana (Temperament) : {nak.get('gana', 'N/A')}
 Guna (Quality)     : {nak.get('guna', 'N/A')}
 Tattva (Element)   : {nak.get('tattva', 'N/A')}
 Motivation       : {nak.get('motivation', 'N/A')}
+
 PADA (QUARTERS):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Pada 1: {nak.get('padas', ['?']*4)[0]}
 Pada 2: {nak.get('padas', ['?']*4)[1]}
 Pada 3: {nak.get('padas', ['?']*4)[2]}
 Pada 4: {nak.get('padas', ['?']*4)[3]}
 
 NAME SYLLABLES (AVAKAHADA):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Pada 1: {syllables[0]}
 Pada 2: {syllables[1]}
 Pada 3: {syllables[2]}
@@ -2969,7 +2972,6 @@ class EnhancedPlanetTab(ttk.Frame):
         if self.app.astro_data.get_all_planets():
             self.show_planet(self.app.astro_data.get_all_planets()[0])
 
-
     def show_planet(self, planet: Dict[str, Any]) -> None:
         """Displays the formatted details for a selected Planet."""
         self.planet_text.config(state='normal')
@@ -2977,14 +2979,16 @@ class EnhancedPlanetTab(ttk.Frame):
         title = f"{planet['name'].upper()} ({planet['sanskrit']} / {planet['devanagari']}) {planet['symbol']}"
 
         details = f"""
-╔══════════════════════════════════════════════════════════════════╗
-║  {title.center(62)}  ║
-╚══════════════════════════════════════════════════════════════════╝
-KARAKA (SIGNIFICATOR):
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+╔═════════════════════════════════════════════════════════════╗
+║  {title.center(62)}                                                                   ║
+╚═════════════════════════════════════════════════════════════╝
+
+ KARAKA (SIGNIFICATOR):
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {planet.get('karaka','N/A')}
-DIGNITIES & STRENGTH:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ DIGNITIES & STRENGTH:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
         # Loop through the dignities dictionary
         dignities = planet.get('dignities', {})
@@ -2992,16 +2996,16 @@ DIGNITIES & STRENGTH:
             details += f"{dignity:<20}: {value}\n"
 
         details += f"""
-BASIC PROPERTIES:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Nature               : {planet.get('nature','N/A')}
-Vimshottari Dasha    : {planet.get('vimshottari_dasha','N/A')}
-Aspects              : {planet.get('aspects', 'N/A')}
-Element              : {planet.get('element', 'N/A')}
-Day                  : {planet.get('day', 'N/A')}
+ BASIC PROPERTIES:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Nature               : {planet.get('nature','N/A')}
+ Vimshottari Dasha    : {planet.get('vimshottari_dasha','N/A')}
+ Aspects              : {planet.get('aspects', 'N/A')}
+ Element              : {planet.get('element', 'N/A')}
+ Day                  : {planet.get('day', 'N/A')}
 
 RELATIONSHIPS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Friends              : {', '.join(planet.get('friendly',[]))}
 Neutral              : {', '.join(planet.get('neutral', []))}
 Enemies              : {', '.join(planet.get('enemy',[]))}
@@ -3072,15 +3076,15 @@ class EnhancedRashiTab(ttk.Frame):
 
         details = f"""
 ╔══════════════════════════════════════════════════════════════════╗
-║  {title.center(62)}  ║
+║  {title.center(62)}                                              ║
 ╚══════════════════════════════════════════════════════════════════╝
 CORE ATTRIBUTES:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Ruling Lord      : {rashi.get('lord','N/A')}
 Element (Tattva) : {rashi.get('tattva','N/A')}
 Modality         : {rashi.get('modality','N/A')}
 DESCRIPTION:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 {rashi.get('description','N/A')}
 """
         self.rashi_text.insert('1.0', details)
@@ -3138,7 +3142,7 @@ class YogasDoshasTab(ttk.Frame):
         """Static text for the Rajyogas tab."""
         return """
 ╔══════════════════════════════════════════════════════════════════╗
-║                RAJYOGAS (राजयोग) - ROYAL COMBINATIONS              ║
+║                RAJYOGAS (राजयोग) - ROYAL COMBINATIONS             ║
 ╚══════════════════════════════════════════════════════════════════╝
 Rajyogas are combinations that promise power, status, and success.
 
@@ -3168,7 +3172,7 @@ Rajyogas are combinations that promise power, status, and success.
         """Static text for the Doshas tab."""
         return """
 ╔══════════════════════════════════════════════════════════════════╗
-║                  DOSHAS (दोष) - PLANETARY AFFLICTIONS              ║
+║                  DOSHAS (दोष) - PLANETARY AFFLICTIONS             ║
 ╚══════════════════════════════════════════════════════════════════╝
 Doshas are afflictions that can indicate challenges or karmic obstacles.
 
@@ -3198,7 +3202,7 @@ Doshas are afflictions that can indicate challenges or karmic obstacles.
         """Static text for the Pancha Mahapurusha Yogas tab."""
         return """
 ╔══════════════════════════════════════════════════════════════════╗
-║             PANCHA MAHAPURUSHA YOGAS (पंच महापुरुष योग)            ║
+║             PANCHA MAHAPURUSHA YOGAS (पंच महापुरुष योग)             ║
 ╚══════════════════════════════════════════════════════════════════╝
 These "Five Great Person" yogas are formed when one of the five
 planets (Mars, Mercury, Jupiter, Venus, Saturn) is in its
