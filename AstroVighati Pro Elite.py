@@ -3881,132 +3881,1040 @@ class EnhancedVighatiTab(ttk.Frame):
             traceback.print_exc() # Log detailed error to console
 
 
-class TransitCalculatorTab(ttk.Frame):
-    """
-    This class defines the "Transits & Predictions" tab.
+# class TransitCalculatorTab(ttk.Frame):
+#     """
+#     This class defines the "Transits & Predictions" tab.
+    
+#     Purpose:
+#     Shows real-time or user-selected date positions of the planets (transits)
+#     in an advanced Treeview. Provides detailed factual context on
+#     BPHS (Gochara) and Lal Kitab (Varshphal) transit principles.
+#     """
+#     def __init__(self, parent: ttk.Notebook, app: 'AstroVighatiElite') -> None:
+#         super().__init__(parent)
+#         self.app = app
+        
+#         # --- Theme Colors ---
+#         self.theme_bg = self.app.current_theme_data.get("bg_dark", "#2e2e2e")
+#         self.theme_fg = self.app.current_theme_data.get("bg_light", "#ffffff")
+#         self.select_bg = self.app.current_theme_data.get("accent", "#005f9e")
+#         self.header_fg = self.app.current_theme_data.get("accent", "#ffcc66")
+#         self.alt_bg = self.app.current_theme_data.get("neutral", "#3a3a3a")
+#         self.info_fg = "#cccccc"
+#         self.dignity_colors = {
+#             'Exalted': '#90EE90', 'Debilitated': '#FF7F7F',
+#             'Mooltrikona': '#87CEFA', 'OwnSign': '#FFFFE0',
+#         }
 
-    Purpose:
-    Shows the current real-time positions of the planets (transits).
-    It is self-contained and does not depend on the loaded chart data.
-    """
+#         self.create_styles()
+#         self.create_ui()
+#         self.set_date_to_today() # Set date fields to today on startup
+#         self.populate_predictions_tab() # Pre-fill the predictions tab
+#         self.calculate_transits() # Run calculation on startup
+
+#     def create_styles(self) -> None:
+#         """Configure custom ttk styles for this tab."""
+#         style = ttk.Style()
+#         style.configure("Transit.TFrame", background=self.theme_bg)
+#         style.configure("Transit.TLabel", background=self.theme_bg, foreground=self.theme_fg, font=('Segoe UI', 10))
+#         style.configure("TransitTitle.TLabel", foreground=self.header_fg, background=self.theme_bg, font=('Segoe UI', 16, 'bold'))
+#         style.configure("TransitHeader.TLabel", foreground=self.header_fg, background=self.theme_bg, font=('Segoe UI', 11, 'bold'))
+#         style.configure("Transit.TLabelframe", background=self.theme_bg, bordercolor=self.header_fg)
+#         style.configure("Transit.TLabelframe.Label", foreground=self.header_fg, background=self.theme_bg, font=('Segoe UI', 10, 'bold'))
+
+#         # Style for the Treeview
+#         style.configure("Transit.Treeview", rowheight=28,
+#                         background=self.alt_bg,
+#                         fieldbackground=self.alt_bg,
+#                         foreground=self.theme_fg, font=('Segoe UI', 10))
+#         style.configure("Transit.Treeview.Heading", font=('Segoe UI', 11, 'bold'),
+#                         background=self.theme_bg,
+#                         foreground=self.header_fg)
+#         style.map("Transit.Treeview", 
+#                   background=[('selected', self.select_bg)],
+#                   foreground=[('selected', self.theme_fg)])
+        
+#         # Dignity Tags
+#         style.configure('Exalted.Treeview', foreground=self.dignity_colors['Exalted'])
+#         style.configure('Debilitated.Treeview', foreground=self.dignity_colors['Debilitated'])
+#         style.configure('Mooltrikona.Treeview', foreground=self.dignity_colors['Mooltrikona'])
+#         style.configure('OwnSign.Treeview', foreground=self.dignity_colors['OwnSign'])
+        
+#         # Style for Spinbox helper
+#         style.configure('Small.TButton', padding=1)
+
+#     def create_ui(self) -> None:
+#         """Creates the elegant, aligned UI for the Transit tab."""
+#         main_frame = ttk.Frame(self, padding=20, style="Transit.TFrame")
+#         main_frame.pack(expand=True, fill='both')
+
+#         ttk.Label(main_frame, text="🌍 TRANSIT CALCULATOR & PREDICTIONS", style='TransitTitle.TLabel').pack(pady=(0, 20))
+
+#         # --- Input Frame ---
+#         control_frame = ttk.LabelFrame(main_frame, text="Transit Controls", padding=15, style="Transit.TLabelframe")
+#         control_frame.pack(fill='x', pady=(0, 15))
+        
+#         # Use grid for alignment
+#         control_frame.grid_columnconfigure(1, weight=1) # Date frame
+#         control_frame.grid_columnconfigure(2, weight=0) # Spacer
+#         control_frame.grid_columnconfigure(3, weight=0) # Button
+#         control_frame.grid_columnconfigure(4, weight=0) # Button
+
+#         # Date Entry
+#         ttk.Label(control_frame, text="Transit Date (DD/MM/YYYY):", style="TransitHeader.TLabel").grid(row=0, column=0, sticky='e', padx=(0,10), pady=5)
+#         date_frame = ttk.Frame(control_frame, style="Transit.TFrame")
+#         date_frame.grid(row=0, column=1, sticky='w', pady=5, padx=5)
+        
+#         self.day_var = tk.StringVar()
+#         self.month_var = tk.StringVar()
+#         self.year_var = tk.StringVar()
+        
+#         Spinbox(date_frame, from_=1, to=31, textvariable=self.day_var, width=4, format="%02.0f", wrap=True, style="Transit.TFrame").pack(side='left', padx=(0, 2))
+#         ttk.Label(date_frame, text="/", style="Transit.TLabel", font=('Segoe UI', 12)).pack(side='left', padx=3)
+#         Spinbox(date_frame, from_=1, to=12, textvariable=self.month_var, width=4, format="%02.0f", wrap=True, style="Transit.TFrame").pack(side='left', padx=2)
+#         ttk.Label(date_frame, text="/", style="Transit.TLabel", font=('Segoe UI', 12)).pack(side='left', padx=3)
+#         Spinbox(date_frame, from_=1900, to=2100, textvariable=self.year_var, width=6, format="%04.0f", wrap=False, style="Transit.TFrame").pack(side='left', padx=(2, 0))
+
+#         # Buttons
+#         self.today_btn = ttk.Button(control_frame, text="📅 Set to Today", command=self.set_date_to_today, width=15)
+#         self.today_btn.grid(row=0, column=3, sticky='e', padx=10, pady=5) # ipady removed
+        
+#         self.calc_btn = ttk.Button(control_frame, text="Calculate Transits", command=self.calculate_transits, style='Accent.TButton', width=18)
+#         self.calc_btn.grid(row=0, column=4, sticky='e', padx=10, pady=5) # ipady removed
+
+
+#         # --- Results Notebook ---
+#         results_notebook = ttk.Notebook(main_frame)
+#         results_notebook.pack(fill='both', expand=True)
+        
+#         # --- Tab 1: Transit Positions (Treeview) ---
+#         transit_frame = ttk.Frame(results_notebook, padding=0)
+#         results_notebook.add(transit_frame, text="Transit Positions (Gochara)")
+
+#         tree_scroll = ttk.Scrollbar(transit_frame, orient='vertical')
+#         columns = ('planet', 'rashi', 'dms', 'nakshatra', 'pada', 'state')
+#         self.transit_tree = ttk.Treeview(transit_frame, columns=columns, show='headings',
+#                                          style="Transit.Treeview", yscrollcommand=tree_scroll.set)
+#         tree_scroll.config(command=self.transit_tree.yview)
+#         tree_scroll.pack(side='right', fill='y')
+#         self.transit_tree.pack(fill='both', expand=True)
+
+#         self.transit_tree.heading('planet', text='Planet (Graha)')
+#         self.transit_tree.heading('rashi', text='Rashi')
+#         self.transit_tree.heading('dms', text='Longitude')
+#         self.transit_tree.heading('nakshatra', text='Nakshatra')
+#         self.transit_tree.heading('pada', text='Pada')
+#         self.transit_tree.heading('state', text='State (Dignity, R/C)')
+
+#         self.transit_tree.column('planet', width=150, anchor='w', stretch=True)
+#         self.transit_tree.column('rashi', width=120, anchor='w', stretch=True)
+#         self.transit_tree.column('dms', width=100, anchor='w', stretch=True)
+#         self.transit_tree.column('nakshatra', width=180, anchor='w', stretch=True)
+#         self.transit_tree.column('pada', width=50, anchor='center', stretch=False)
+#         self.transit_tree.column('state', width=150, anchor='w', stretch=True)
+
+#         # --- Tab 2: Predictions (Text) ---
+#         pred_frame = ttk.Frame(results_notebook)
+#         results_notebook.add(pred_frame, text="🔮 Transit Principles (BPHS & Lal Kitab)")
+        
+#         self.prediction_text = scrolledtext.ScrolledText(
+#             pred_frame, font=('Segoe UI', 11), wrap='word',
+#             background=self.theme_bg, foreground=self.theme_fg,
+#             padx=15, pady=15, relief='flat', borderwidth=0,
+#             selectbackground=self.select_bg, selectforeground=self.theme_fg,
+#             insertbackground=self.theme_fg
+#         )
+#         self.prediction_text.pack(fill='both', expand=True)
+        
+#         # --- Configure tags for styled text ---
+#         self.prediction_text.tag_configure("header", font=('Segoe UI', 14, 'bold', 'underline'), 
+#                                            foreground=self.header_fg, spacing3=10, spacing1=5, justify='center')
+#         self.prediction_text.tag_configure("sub_header", font=('Segoe UI', 12, 'bold'), 
+#                                            foreground=self.header_fg, spacing1=10, spacing3=5)
+#         self.prediction_text.tag_configure("normal_text", font=('Segoe UI', 11), 
+#                                            foreground=self.theme_fg, spacing1=5, lmargin1=20, lmargin2=20)
+#         self.prediction_text.tag_configure("bold_text", font=('Segoe UI', 11, 'bold'), foreground=self.info_fg)
+#         self.prediction_text.tag_configure("separator", font=('Courier New', 10), 
+#                                            foreground=self.alt_bg, justify='center', spacing1=10, spacing3=10)
+
+#     def set_date_to_today(self) -> None:
+#         """Sets the date spinboxes to the current local date."""
+#         now = datetime.now()
+#         self.day_var.set(f"{now.day:02d}")
+#         self.month_var.set(f"{now.month:02d}")
+#         self.year_var.set(f"{now.year:04d}")
+        
+#     def calculate_transits(self) -> None:
+#         """Calculates and displays the planet positions for the selected date."""
+#         self.app.status_var.set("Calculating transits for selected date...")
+        
+#         try:
+#             day = int(self.day_var.get())
+#             month = int(self.month_var.get())
+#             year = int(self.year_var.get())
+#             # Calculate at noon UTC for a good average daily position
+#             calc_dt_utc = datetime(year, month, day, 12, 0, 0)
+#         except (ValueError, TypeError): # Catch if fields are empty
+#             messagebox.showerror("Input Error", "Please enter a valid date (DD/MM/YYYY).")
+#             self.app.status_var.set("Error: Invalid date.")
+#             return
+
+#         # Use a default location (e.g., Ujjain/New Delhi) for Ascendant
+#         # Using 0 UTC offset because we are passing a UTC datetime
+#         positions = self.app.calculator.calculate_planet_positions(calc_dt_utc, 28.6139, 77.2090, 0)
+
+#         if not positions:
+#             self.app.status_var.set("Failed to calculate transits.")
+#             return
+
+#         # Clear old data
+#         self.transit_tree.delete(*self.transit_tree.get_children())
+        
+#         sun_longitude = positions.get('Sun', {}).get('longitude', 0)
+#         planet_order = ["Ascendant", "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+
+#         for planet_name in planet_order:
+#             if planet_name in positions:
+#                 pos_data = positions[planet_name]
+#                 planet_full_data = self.app.interpreter.planet_data_cache.get(planet_name, {})
+#                 sign_name = pos_data['rashi']
+                
+#                 # --- Get Dignity ---
+#                 dignity_str = "Neutral"
+#                 tags = []
+#                 if planet_full_data: 
+#                     dignities = planet_full_data.get('dignities', {})
+#                     if sign_name in dignities.get("Exaltation", ""):
+#                         dignity_str = "Exalted"; tags.append('Exalted.Treeview')
+#                     elif sign_name in dignities.get("Debilitation", ""):
+#                         dignity_str = "Debilitated"; tags.append('Debilitated.Treeview')
+#                     elif sign_name in dignities.get("Mooltrikona", ""):
+#                         dignity_str = "Mooltrikona"; tags.append('Mooltrikona.Treeview')
+#                     elif sign_name in dignities.get("Own Sign", ""):
+#                         dignity_str = "Own Sign"; tags.append('OwnSign.Treeview')
+#                     elif planet_name != "Ascendant":
+#                         if sign_name in planet_full_data.get("friendly", []): dignity_str = "Friendly"
+#                         elif sign_name in planet_full_data.get("enemy", []): dignity_str = "Enemy"
+
+#                 # --- Check for Retro/Combust ---
+#                 state_list: List[str] = []
+#                 speed = pos_data.get('speed', 0.0)
+#                 if speed < 0 and planet_name not in ["Rahu", "Ketu"]:
+#                     state_list.append("R")
+                
+#                 if self.app.interpreter.get_special_state_analysis(planet_name, speed, sun_longitude, pos_data['longitude']).count("Combust"):
+#                     state_list.append("C")
+
+#                 state_prefix = f"[{', '.join(state_list)}]" if state_list else ""
+#                 final_state_str = f"{dignity_str} {state_prefix}".strip()
+                
+#                 # --- Calculate Nakshatra Pada ---
+#                 nak_data = next((n for n in get_all_nakshatras_with_long() if n['name'] == pos_data['nakshatra']), None)
+#                 pada = '?'
+#                 if nak_data:
+#                     nak_longitude = pos_data['longitude']
+#                     nak_start = nak_data['longitude_start']
+                    
+#                     if nak_longitude < nak_start and nak_data['num'] == 1:
+#                          traversed_in_nak = nak_longitude + (360.0 - nak_start)
+#                     else:
+#                          traversed_in_nak = nak_longitude - nak_start
+                         
+#                     pada_span = nak_data.get('span', 13.333333) / 4.0
+#                     if pada_span > 0:
+#                         pada = int(math.floor(traversed_in_nak / pada_span)) + 1
+#                         if pada > 4: pada = 4
+#                         if pada < 1: pada = 1
+#                     else:
+#                         pada = 1
+
+#                 self.transit_tree.insert('', 'end', values=(
+#                     planet_name, pos_data['rashi'], pos_data['dms'],
+#                     pos_data['nakshatra'], pada, final_state_str
+#                 ), tags=tuple(tags))
+
+#         self.app.status_var.set(f"Transits calculated for {calc_dt_utc.strftime('%d-%b-%Y')}")
+
+#     def populate_predictions_tab(self) -> None:
+#         """Fills the prediction tab with detailed BPHS and Lal Kitab principles."""
+        
+#         self.prediction_text.config(state='normal')
+#         self.prediction_text.delete('1.0', tk.END)
+
+#         def insert_text(text, tags):
+#             self.prediction_text.insert(tk.END, text, tags)
+
+#         insert_text("TRANSIT (GOCHARA) PRINCIPLES\n", ("header",))
+#         insert_text("Note: For personalized predictions, transits must be analyzed from your natal chart ('Janam Kundli') for context.\n\n", ("normal_text",))
+
+#         # --- BPHS Section ---
+#         insert_text("BPHS Gochara Principles (Classical)\n", ("sub_header",))
+#         insert_text(
+#             "Classical Vedic astrology (as per BPHS and Phaladeepika) analyzes transits ('Gochara') from three primary reference points:\n"
+#             "1. **From the Lagna (Ascendant):** Shows events impacting the 'self', physical body, and overall life direction.\n"
+#             "2. **From the Chandra Lagna (Natal Moon):** This is the most important. It shows the transit's effect on the 'Manas' (mind), emotions, and general well-being.\n"
+#             "3. **From the Surya Lagna (Natal Sun):** Shows the transit's effect on the 'Atma' (soul), authority, career, and health.\n\n",
+#             ("normal_text",)
+#         )
+#         insert_text("General Effects of Major Transits (from Natal Moon):\n", ("bold_text",))
+        
+#         insert_text("♄ Saturn (Shani):\n", ("bold_text",))
+#         insert_text(
+#             "• **Sade Sati (साढ़े साती):** The ~7.5-year period when Saturn transits the 12th, 1st, and 2nd houses from the Moon. A period of intense karmic lessons, restructuring, and maturation. The 1st phase (12H) brings separation and expenses. The 2nd phase (1H) brings pressure on self and health. The 3rd phase (2H) brings family and financial restructuring.\n"
+#             "• **Kantaka Shani (कण्टक शनि):** 'Thorn' of Saturn. Occurs when Saturn transits the 4th (domestic peace, mother) or 8th (obstacles, health) from the Moon. Part of 'Small Panoti' or 'Dhaiyya'.\n"
+#             "• **10th House Transit:** When Saturn transits the 10th from the Moon, it brings immense career pressure, changes, and responsibility. Forces one to work hard and restructure professional life.\n",
+#             ("normal_text",)
+#         )
+        
+#         insert_text("🌟 Jupiter (Guru):\n", ("bold_text",))
+#         insert_text(
+#             "• Transits a sign for ~1 year. Brings expansion, optimism, and growth to the house it transits. Its 5th, 7th, and 9th aspects are divine blessings ('Amrita Drishti').\n"
+#             "• **Key Auspicious Transits:** 1st, 2nd, 5th, 7th, 9th, 11th from the Moon are generally excellent for wisdom, wealth, and auspicious events.\n",
+#             ("normal_text",)
+#         )
+
+#         insert_text("☊ / ☋ Rahu-Ketu Axis:\n", ("bold_text",))
+#         insert_text(
+#             "• The nodes transit a sign for ~1.5 years (retrograde). They create an axis of intense karmic activity.\n"
+#             "• **Rahu:** Brings obsession, ambition, and unconventional desires to the house it transits.\n"
+#             "• **Ketu:** Brings detachment, spirituality, and sudden endings/insights to the house it transits.\n"
+#             "• **Key Transit:** When the axis transits over the Natal Lagna/7th or Moon/7th-from-Moon, it brings profound confusion and sudden life-changing events.\n",
+#             ("normal_text",)
+#         )
+
+#         insert_text("General Effects of Faster Planets (from Natal Moon):\n", ("bold_text",))
+        
+#         insert_text("☀️ Sun (Surya):\n", ("bold_text",))
+#         insert_text(
+#             "• Transits a sign for ~1 month. Generally auspicious in the 3rd, 6th, 10th, and 11th houses from the Moon, bringing confidence, success over enemies, and career growth.\n",
+#             ("normal_text",)
+#         )
+        
+#         insert_text("♀ Venus (Shukra):\n", ("bold_text",))
+#         insert_text(
+#             "• Transits a sign for ~1 month. Generally auspicious in all houses except the 6th, 7th, and 10th from the Moon. It brings comfort, luxury, and pleasure.\n",
+#             ("normal_text",)
+#         )
+        
+#         insert_text("☿ Mercury (Budha):\n", ("bold_text",))
+#         insert_text(
+#             "• Transits a sign for ~3-4 weeks. Generally auspicious in the 2nd, 4th, 6th, 8th, 10th, and 11th houses from the Moon, improving intellect, communication, and gains.\n",
+#             ("normal_text",)
+#         )
+        
+#         insert_text("♂ Mars (Mangala):\n", ("bold_text",))
+#         insert_text(
+#             "• Transits a sign for ~1.5 months. Generally auspicious in the 3rd, 6th, and 11th houses from the Moon, giving energy, courage, and success. In other houses, it can bring conflict, accidents, or expenses.\n",
+#             ("normal_text",)
+#         )
+        
+#         insert_text("☽ Moon (Chandra):\n", ("bold_text",))
+#         insert_text(
+#             "• The fastest transit (~2.5 days per sign). Its favorability (auspicious in 1, 3, 6, 7, 10, 11 from Natal Moon) is the basis for 'Tara Bala' and selecting a 'Muhurta' (auspicious timing).\n",
+#             ("normal_text",)
+#         )
+
+#         insert_text("—" * 80 + "\n\n", ("separator",))
+
+#         # --- Lal Kitab Section ---
+#         insert_text("Lal Kitab Transit Perspective (Varshphal)\n", ("sub_header",))
+#         insert_text(
+#             "**Lal Kitab's transit system is completely different from BPHS.** It does not primarily use daily Gochara (transits) for major predictions. Its system is based on the **Varshphal (Annual Chart)**.\n\n"
+#             "• **Varshphal (Annual Chart):** A new chart is cast for the year (from one birthday to the next) when the Sun returns to its exact natal longitude. This new annual chart is the *only* chart used for predictions for that year.\n"
+#             "• **Yearly 'Transit':** In the Varshphal, the planet that lands in the 1st house 'transits' or gives its effect to the *entire chart* for that year. For example, if Jupiter is in the 1st house of the Varshphal, it is a very auspicious year. If Saturn is, it will be a year of hard work and delays.\n"
+#             "• **Gochara (Daily Transit):** Daily transits are given very little importance. They are only seen as minor triggers or for day-to-day effects, *not* for major life event predictions. The annual Varshphal chart is paramount.\n",
+#             ("normal_text",)
+#         )
+
+#         self.prediction_text.config(state='disabled')                       
+
+class TransitCalculatorTab(ttk.Frame):
+
     def __init__(self, parent: ttk.Notebook, app: 'AstroVighatiElite') -> None:
         super().__init__(parent)
         self.app = app
+        
+        # --- Constants (Module Level) ---
+        # --- FIX: Pull data from the app's centralized astro_data ---
+        self.RASHI_NAMES = [r['name'] for r in self.app.astro_data.get_all_rashis()]
+        
+        self.RASHI_LORDS = {r['name']: r['lord'] for r in self.app.astro_data.get_all_rashis()}
+        
+        # We need the full nakshatra data for lords and pada calcs
+        try:
+             self.NAKSHATRA_DATA = get_all_nakshatras_with_long()
+        except AttributeError:
+             messagebox.showerror("Data Error", "Could not find 'get_all_nakshatras_with_long' on astro_data. Dasha tab will fail.")
+             self.NAKSHATRA_DATA = [] # Prevent crash
+             
+        self.NAKSHATRA_LORDS = {n['name']: n['lord'] for n in self.NAKSHATRA_DATA}
+        
+        self.PLANET_NAMES = [p['name'] for p in self.app.astro_data.get_all_planets()]
+        # --- END FIX ---
+        
+        # --- Theme Colors (Enhanced) ---
+        self.theme_bg = self.app.current_theme_data.get("bg_dark", "#2e2e2e")
+        self.theme_fg = self.app.current_theme_data.get("bg_light", "#ffffff")
+        self.select_bg = self.app.current_theme_data.get("accent", "#005f9e")
+        self.header_fg = self.app.current_theme_data.get("accent", "#ffcc66")
+        self.alt_bg = self.app.current_theme_data.get("neutral", "#3a3a3a")
+        self.info_fg = "#cccccc"
+        
+        # Enhanced dignity and state colors
+        self.dignity_colors = {
+            'Exalted': '#90EE90',       # Bright Green
+            'Debilitated': '#FF7F7F',   # Bright Red
+            'Mooltrikona': '#87CEFA',  # Light Sky Blue
+            'OwnSign': '#FFFFE0',       # Light Yellow
+            'Friendly': '#ADD8E6',      # Light Blue
+            'Enemy': '#F08080',         # Light Coral
+            'Neutral': self.info_fg,    # Default info color
+            'Retrograde': '#FFB6C1',    # Light Pink
+            'Combust': '#FFA500',       # Orange
+        }
+
+        self.create_styles()
         self.create_ui()
+        
+        # --- Run calculations on startup ---
+        self.set_date_to_today() # This will call calculate_all()
+
+    def create_styles(self) -> None:
+        """Configure elegant, modern ttk styles for this tab."""
+        style = ttk.Style()
+        
+        # --- Base Styles ---
+        style.configure("Transit.TFrame", background=self.theme_bg)
+        style.configure("Transit.TLabel", background=self.theme_bg, foreground=self.theme_fg, font=('Calibri', 11))
+        style.configure("TransitTitle.TLabel", foreground=self.header_fg, background=self.theme_bg, font=('Georgia', 18, 'bold'))
+        style.configure("TransitHeader.TLabel", foreground=self.header_fg, background=self.theme_bg, font=('Calibri', 12, 'bold'))
+        style.configure("Transit.TLabelframe", background=self.theme_bg, bordercolor=self.header_fg, relief='solid', borderwidth=1)
+        style.configure("Transit.TLabelframe.Label", foreground=self.header_fg, background=self.theme_bg, font=('Georgia', 11, 'bold'))
+
+        # --- Notebook Styles ---
+        style.configure("Transit.TNotebook", background=self.theme_bg, bordercolor=self.theme_bg, tabposition='n')
+        style.configure("Transit.TNotebook.Tab", 
+                        background=self.alt_bg, 
+                        foreground=self.info_fg, 
+                        font=('Calibri', 10, 'bold'), 
+                        padding=[12, 6])
+        style.map("Transit.TNotebook.Tab", 
+                  background=[('selected', self.select_bg)],
+                  foreground=[('selected', self.theme_fg)])
+        # style.configure("Transit.TNotebook.Tab", expand=[('selected', True)]) # 'expand' is not a valid style option here
+
+        # --- Treeview Styles ---
+        style.configure("Transit.Treeview", rowheight=30,
+                        background=self.alt_bg,
+                        fieldbackground=self.alt_bg,
+                        foreground=self.theme_fg, font=('Calibri', 11))
+        style.configure("Transit.Treeview.Heading", font=('Calibri', 12, 'bold'),
+                        background=self.theme_bg,
+                        foreground=self.header_fg,
+                        relief='flat')
+        style.map("Transit.Treeview.Heading", 
+                  background=[('active', self.alt_bg)])
+        style.map("Transit.Treeview", 
+                  background=[('selected', self.select_bg)],
+                  foreground=[('selected', self.theme_fg)])
+        
+        # --- Dignity & State Tags ---
+        style.configure('Exalted.Treeview', foreground=self.dignity_colors['Exalted'], font=('Calibri', 11, 'bold'))
+        style.configure('Debilitated.Treeview', foreground=self.dignity_colors['Debilitated'], font=('Calibri', 11, 'bold'))
+        style.configure('Mooltrikona.Treeview', foreground=self.dignity_colors['Mooltrikona'])
+        style.configure('OwnSign.Treeview', foreground=self.dignity_colors['OwnSign'])
+        style.configure('Friendly.Treeview', foreground=self.dignity_colors['Friendly'])
+        style.configure('Enemy.Treeview', foreground=self.dignity_colors['Enemy'])
+        style.configure('Neutral.Treeview', foreground=self.dignity_colors['Neutral'])
+        style.configure('Retro.Treeview', foreground=self.dignity_colors['Retrograde'], font=('Calibri', 11, 'italic'))
+        style.configure('Combust.Treeview', foreground=self.dignity_colors['Combust'])
+
+        # --- Spinbox Style ---
+        # This uses the standard ttk.Spinbox, not the custom one.
+        style.configure("Transit.TSpinbox", 
+                        background=self.alt_bg, 
+                        foreground=self.theme_fg, 
+                        fieldbackground=self.alt_bg, 
+                        bordercolor=self.alt_bg,
+                        arrowcolor=self.theme_fg,
+                        relief='flat',
+                        font=('Calibri', 11))
+        style.map("Transit.TSpinbox",
+                  background=[('focus', self.alt_bg), ('readonly', self.alt_bg)],
+                  fieldbackground=[('focus', self.alt_bg), ('readonly', self.alt_bg)],
+                  foreground=[('focus', self.theme_fg), ('readonly', self.theme_fg)])
+                  
+        # --- Combobox Style ---
+        style.map('Transit.TCombobox', 
+                  fieldbackground=[('readonly', self.alt_bg)],
+                  background=[('readonly', self.alt_bg)],
+                  foreground=[('readonly', self.theme_fg)],
+                  selectbackground=[('readonly', self.alt_bg)],
+                  selectforeground=[('readonly', self.theme_fg)])
+        
+        # Add style for Spinbox helper class (if you use it instead)
+        style.configure('Small.TButton', padding=1)
 
     def create_ui(self) -> None:
-        main_frame = ttk.Frame(self, padding=20)
+        """Creates the elegant, aligned UI with a multi-tab notebook."""
+        main_frame = ttk.Frame(self, padding=20, style="Transit.TFrame")
         main_frame.pack(expand=True, fill='both')
 
-        ttk.Label(main_frame, text="🌍 TRANSIT CALCULATOR & PREDICTIONS", style='Title.TLabel').pack(pady=(0, 20))
+        ttk.Label(main_frame, text="🪐 GOCHARA & VARSHPHAL ANALYSIS", style='TransitTitle.TLabel', anchor='center').pack(pady=(0, 20), fill='x')
 
-        control_frame = ttk.LabelFrame(main_frame, text="Transit Date", padding=15)
+        # --- Input Frame (Compact Grid) ---
+        control_frame = ttk.LabelFrame(main_frame, text="Event Controls", padding=(15, 10), style="Transit.TLabelframe")
         control_frame.pack(fill='x', pady=(0, 15))
+        
+        # Configure grid columns
+        control_frame.grid_columnconfigure(1, weight=1) # Date frame
+        control_frame.grid_columnconfigure(2, weight=0, pad=15) # Separator
+        control_frame.grid_columnconfigure(3, weight=0) # Label
+        control_frame.grid_columnconfigure(4, weight=1) # Reference combo
+        control_frame.grid_columnconfigure(5, weight=0, pad=15) # Separator
+        control_frame.grid_columnconfigure(6, weight=2) # Spacer
+        control_frame.grid_columnconfigure(7, weight=0) # Button
+        control_frame.grid_columnconfigure(8, weight=0) # Button
+        
+        # --- Date Entry ---
+        ttk.Label(control_frame, text="Transit Date:", style="TransitHeader.TLabel").grid(row=0, column=0, sticky='w', padx=(0, 10), pady=5)
+        
+        date_frame = ttk.Frame(control_frame, style="Transit.TFrame")
+        date_frame.grid(row=0, column=1, sticky='w', pady=5)
+        
+        self.day_var = tk.StringVar()
+        self.month_var = tk.StringVar()
+        self.year_var = tk.StringVar()
+        
+        # --- Use the custom Spinbox helper class ---
+        Spinbox(date_frame, from_=1, to=31, textvariable=self.day_var, width=4, format="%02.0f", wrap=True, style="Transit.TFrame").pack(side='left', padx=(0, 2))
+        ttk.Label(date_frame, text="/", style="Transit.TLabel", font=('Calibri', 12)).pack(side='left', padx=3)
+        Spinbox(date_frame, from_=1, to=12, textvariable=self.month_var, width=4, format="%02.0f", wrap=True, style="Transit.TFrame").pack(side='left', padx=2)
+        ttk.Label(date_frame, text="/", style="Transit.TLabel", font=('Calibri', 12)).pack(side='left', padx=3)
+        Spinbox(date_frame, from_=1900, to=2100, textvariable=self.year_var, width=6, format="%04.0f", wrap=False, style="Transit.TFrame").pack(side='left', padx=(2, 0))
 
-        ttk.Button(control_frame, text="📅 Show Current Transits", command=self.show_current_transits, style='Accent.TButton').pack(side='left', padx=5, ipady=8)
-        ttk.Button(control_frame, text="🔮 Show General Predictions", command=self.show_predictions).pack(side='left', padx=5, ipady=8)
+        # --- Separator ---
+        ttk.Separator(control_frame, orient='vertical').grid(row=0, column=2, sticky='ns', padx=15, pady=2)
 
-        results_notebook = ttk.Notebook(main_frame)
-        results_notebook.pack(fill='both', expand=True)
+        # --- Reference Point Selector (NEW) ---
+        ttk.Label(control_frame, text="Reference:", style="TransitHeader.TLabel").grid(row=0, column=3, sticky='w', padx=(0, 10), pady=5)
+        
+        self.reference_var = tk.StringVar(value="Natal Moon")
+        self.reference_combo = ttk.Combobox(
+            control_frame, 
+            textvariable=self.reference_var, 
+            values=["Natal Moon", "Natal Lagna", "Natal Sun"],
+            state='readonly',
+            width=15,
+            style="Transit.TCombobox",
+            font=('Calibri', 11)
+        )
+        self.reference_combo.grid(row=0, column=4, sticky='w', padx=5, ipady=3) # Add ipady
 
-        transit_frame = ttk.Frame(results_notebook)
-        results_notebook.add(transit_frame, text="Current Positions")
-        self.transit_text = scrolledtext.ScrolledText(transit_frame, font=('Courier New', 10), wrap='word')
-        self.transit_text.pack(fill='both', expand=True)
+        # --- Separator ---
+        ttk.Separator(control_frame, orient='vertical').grid(row=0, column=5, sticky='ns', padx=15, pady=2)
 
-        pred_frame = ttk.Frame(results_notebook)
-        results_notebook.add(pred_frame, text="Predictions")
-        self.prediction_text = scrolledtext.ScrolledText(pred_frame, font=('Segoe UI', 10), wrap='word')
+        # --- Buttons ---
+        button_frame = ttk.Frame(control_frame, style="Transit.TFrame")
+        button_frame.grid(row=0, column=7, columnspan=2, sticky='e', pady=5) # Use column 7/8
+        
+        self.today_btn = ttk.Button(button_frame, text="📅 Today", command=self.set_date_to_today, width=10)
+        self.today_btn.pack(side='left', padx=5, ipady=4)
+        
+        self.calc_btn = ttk.Button(button_frame, text="Calculate", command=self.calculate_all, style='Accent.TButton', width=12)
+        self.calc_btn.pack(side='left', padx=5, ipady=4)
+
+        # --- Results Notebook (NEW STRUCTURE) ---
+        results_notebook = ttk.Notebook(main_frame, style="Transit.TNotebook")
+        results_notebook.pack(fill='both', expand=True, pady=(10, 0))
+        
+        # --- Create Tab Content ---
+        self.gochara_tab = self.create_gochara_tab(results_notebook)
+        self.ashtakavarga_tab = self.create_ashtakavarga_tab(results_notebook)
+        self.varshphal_tab = self.create_varshphal_tab(results_notebook)
+        self.principles_tab = self.create_principles_tab(results_notebook)
+
+        # --- Add Tabs to Notebook ---
+        results_notebook.add(self.gochara_tab, text="🪐 Gochara (Positions)")
+        results_notebook.add(self.ashtakavarga_tab, text="🔢 Ashtakavarga")
+        results_notebook.add(self.varshphal_tab, text="📖 Lal Kitab (Varshphal)")
+        results_notebook.add(self.principles_tab, text="📜 Principles")
+
+    def create_gochara_tab(self, parent: ttk.Notebook) -> ttk.Frame:
+        """Creates the tab for detailed transit positions (Gochara)."""
+        transit_frame = ttk.Frame(parent, padding=0, style="Transit.TFrame")
+
+        tree_scroll = ttk.Scrollbar(transit_frame, orient='vertical')
+        
+        columns = ('planet', 'rashi', 'sign_lord', 'dms', 'nakshatra', 'nak_lord', 'pada', 'natal_house', 'state')
+        self.transit_tree = ttk.Treeview(transit_frame, columns=columns, show='headings',
+                                         style="Transit.Treeview", yscrollcommand=tree_scroll.set)
+        
+        tree_scroll.config(command=self.transit_tree.yview)
+        tree_scroll.pack(side='right', fill='y')
+        self.transit_tree.pack(fill='both', expand=True)
+
+        self.transit_tree.heading('planet', text='Planet (Graha)')
+        self.transit_tree.heading('rashi', text='Rashi')
+        self.transit_tree.heading('sign_lord', text='Sign Lord')
+        self.transit_tree.heading('dms', text='Longitude')
+        self.transit_tree.heading('nakshatra', text='Nakshatra')
+        self.transit_tree.heading('nak_lord', text='Nak Lord')
+        self.transit_tree.heading('pada', text='Pada')
+        self.transit_tree.heading('natal_house', text='Natal House')
+        self.transit_tree.heading('state', text='State (Dignity, R/C)')
+
+        self.transit_tree.column('planet', width=120, anchor='w', stretch=False)
+        self.transit_tree.column('rashi', width=100, anchor='w', stretch=False)
+        self.transit_tree.column('sign_lord', width=80, anchor='w', stretch=False)
+        self.transit_tree.column('dms', width=100, anchor='w', stretch=False)
+        self.transit_tree.column('nakshatra', width=140, anchor='w', stretch=False)
+        self.transit_tree.column('nak_lord', width=80, anchor='w', stretch=False)
+        self.transit_tree.column('pada', width=50, anchor='center', stretch=False)
+        self.transit_tree.column('natal_house', width=90, anchor='center', stretch=False)
+        self.transit_tree.column('state', width=150, anchor='w', stretch=True)
+
+        return transit_frame
+
+    def create_ashtakavarga_tab(self, parent: ttk.Notebook) -> ttk.Frame:
+        """Creates the tab for BAV and SAV."""
+        av_frame = ttk.Frame(parent, padding=15, style="Transit.TFrame")
+        
+        bav_lf = ttk.LabelFrame(av_frame, text="Bhinnashtakavarga (BAV) Bindus", padding=10, style="Transit.TLabelframe")
+        bav_lf.pack(fill='x', expand=False, pady=(0, 15))
+
+        bav_scroll = ttk.Scrollbar(bav_lf, orient='vertical')
+        bav_cols = ('planet', *self.RASHI_NAMES)
+        self.bav_tree = ttk.Treeview(bav_lf, columns=bav_cols, show='headings',
+                                     style="Transit.Treeview", yscrollcommand=bav_scroll.set, height=8)
+        bav_scroll.config(command=self.bav_tree.yview)
+        bav_scroll.pack(side='right', fill='y')
+        self.bav_tree.pack(fill='x', expand=True)
+
+        self.bav_tree.heading('planet', text='Planet')
+        self.bav_tree.column('planet', width=80, anchor='w', stretch=False)
+        for rashi in self.RASHI_NAMES:
+            self.bav_tree.heading(rashi, text=rashi[:3])
+            self.bav_tree.column(rashi, width=60, anchor='center', stretch=True)
+
+        sav_lf = ttk.LabelFrame(av_frame, text="Sarvashtakavarga (SAV) Bindus", padding=10, style="Transit.TLabelframe")
+        sav_lf.pack(fill='x', expand=False)
+        
+        sav_cols = ('rashi', 'bindus')
+        self.sav_tree = ttk.Treeview(sav_lf, columns=sav_cols, show='headings',
+                                     style="Transit.Treeview", height=5)
+        self.sav_tree.pack(fill='x', expand=True)
+        
+        self.sav_tree.heading('rashi', text='Rashi')
+        self.sav_tree.heading('bindus', text='Total Bindus')
+        self.sav_tree.column('rashi', width=150, anchor='w', stretch=True)
+        self.sav_tree.column('bindus', width=150, anchor='center', stretch=True)
+
+        return av_frame
+        
+    def create_varshphal_tab(self, parent: ttk.Notebook) -> ttk.Frame:
+        """Creates the tab for Lal Kitab (Varshphal) analysis."""
+        lk_frame = ttk.Frame(parent, padding=0, style="Transit.TFrame")
+        
+        self.varshphal_text = scrolledtext.ScrolledText(
+            lk_frame, font=('Calibri', 12), wrap='word',
+            background=self.theme_bg, foreground=self.theme_fg,
+            padx=20, pady=15, relief='flat', borderwidth=0,
+            selectbackground=self.select_bg, selectforeground=self.theme_fg,
+            insertbackground=self.theme_fg
+        )
+        self.varshphal_text.pack(fill='both', expand=True)
+        
+        self.varshphal_text.tag_configure("header", font=('Georgia', 16, 'bold', 'underline'), 
+                                          foreground=self.header_fg, spacing3=15, spacing1=5, justify='center')
+        self.varshphal_text.tag_configure("sub_header", font=('Georgia', 13, 'bold'), 
+                                          foreground=self.header_fg, spacing1=12, spacing3=5)
+        self.varshphal_text.tag_configure("normal_text", font=('Calibri', 12), 
+                                          foreground=self.theme_fg, spacing1=5, lmargin1=25, lmargin2=25)
+        self.varshphal_text.tag_configure("bold_text", font=('Calibri', 12, 'bold'), foreground=self.info_fg)
+        self.varshphal_text.tag_configure("info", font=('Calibri', 11, 'italic'), foreground=self.info_fg, lmargin1=25, lmargin2=25)
+
+        self.varshphal_text.insert('1.0', "Calculate transits to generate the Lal Kitab Varshphal (Annual Chart) for the selected year.", ("info",))
+        self.varshphal_text.config(state='disabled')
+        
+        return lk_frame
+
+    def create_principles_tab(self, parent: ttk.Notebook) -> ttk.Frame:
+        """Creates the tab for static astrological principles."""
+        pred_frame = ttk.Frame(parent, padding=0, style="Transit.TFrame")
+        
+        self.prediction_text = scrolledtext.ScrolledText(
+            pred_frame, font=('Calibri', 12), wrap='word',
+            background=self.theme_bg, foreground=self.theme_fg,
+            padx=20, pady=15, relief='flat', borderwidth=0,
+            selectbackground=self.select_bg, selectforeground=self.theme_fg,
+            insertbackground=self.theme_fg
+        )
         self.prediction_text.pack(fill='both', expand=True)
+        
+        self.prediction_text.tag_configure("header", font=('Georgia', 16, 'bold', 'underline'), 
+                                           foreground=self.header_fg, spacing3=15, spacing1=5, justify='center')
+        self.prediction_text.tag_configure("sub_header", font=('Georgia', 13, 'bold'), 
+                                           foreground=self.header_fg, spacing1=12, spacing3=5)
+        self.prediction_text.tag_configure("normal_text", font=('Calibri', 12), 
+                                           foreground=self.theme_fg, spacing1=5, lmargin1=25, lmargin2=25)
+        self.prediction_text.tag_configure("bold_text", font=('Calibri', 12, 'bold'), foreground=self.info_fg)
+        self.prediction_text.tag_configure("separator", font=('Courier New', 10), 
+                                           foreground=self.alt_bg, justify='center', spacing1=15, spacing3=15)
+        
+        return pred_frame
 
-        self.transit_text.insert('1.0', "Click 'Show Current Transits' to see real-time planetary positions...")
-        self.prediction_text.insert('1.0', "Click 'Show General Predictions' for insights on major transits...")
+    def set_date_to_today(self) -> None:
+        """Sets the date spinboxes to the current local date."""
+        now = datetime.now()
+        self.day_var.set(f"{now.day:02d}")
+        self.month_var.set(f"{now.month:02d}")
+        self.year_var.set(f"{now.year:04d}")
+        
+    def calculate_all(self) -> None:
+        """Wrapper function to run all calculations."""
+        self.app.status_var.set("Calculating all astrological data...")
+        
+        # --- 1. Get Natal Chart (CRITICAL) ---
+        try:
+            # --- FIX: Access chart data from self.app ---
+            if not self.app.chart_data:
+                messagebox.showwarning("No Natal Chart", "Please generate a chart in the 'Kundli & Vargas' tab first to calculate advanced transits.")
+                self.app.status_var.set("Ready. (No natal chart loaded)")
+                return
+            natal_chart = self.app.chart_data
+            # --- END FIX ---
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not load natal chart: {e}")
+            self.app.status_var.set("Error: Failed to get natal chart.")
+            return
 
-    def show_current_transits(self) -> None:
-        """Calculates and displays the planet positions for *right now*."""
-        self.app.status_var.set("Calculating current transits...")
-
-        now_utc = datetime.utcnow()
-        now_local = datetime.now()
-
-        # Using a default location (New Delhi) for Ascendant
-        positions = self.app.calculator.calculate_planet_positions(now_utc, 28.6139, 77.2090, 0) # 0 UTC offset
-
-        if not positions:
+        # --- 2. Get Transit Date ---
+        try:
+            day = int(self.day_var.get())
+            month = int(self.month_var.get())
+            year = int(self.year_var.get())
+            calc_dt_utc = datetime(year, month, day, 12, 0, 0) # Noon UTC
+        except (ValueError, TypeError):
+            messagebox.showerror("Input Error", "Please enter a valid date (DD/MM/YYYY).")
+            self.app.status_var.set("Error: Invalid date.")
+            return
+            
+        # --- 3. Run Calculations ---
+        transit_positions = self.app.calculator.calculate_planet_positions(calc_dt_utc, 28.6139, 77.2090, 0) 
+        if not transit_positions:
             self.app.status_var.set("Failed to calculate transits.")
             return
 
-        text = f"""
-╔══════════════════════════════════════════════════════════════════╗
-║                       CURRENT PLANETARY TRANSITS                 ║
-╚══════════════════════════════════════════════════════════════════╝
-Date & Time: {now_local.strftime('%d %B %Y, %H:%M:%S')} (Local Time)
-Calculated for: Universal Time (UTC)
-Location (Asc): New Delhi (28.61° N, 77.20° E)
-════════════════════════════════════════════════════════════════════
-SIDEREAL POSITIONS (LAHIRI AYANAMSA):
-"""
-        planet_order = ["Ascendant", "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
-        for planet in planet_order:
-            if planet in positions:
-                data = positions[planet]
-                rashi_info = next((r for r in self.app.astro_data.get_all_rashis() if r['name'] == data.get('rashi')), {})
-                planet_dev = next((p.get('devanagari') for p in self.app.astro_data.get_all_planets() if p['name'] == planet), '')
-                planet_display = f"{planet} ({planet_dev})"
-                rashi_display = f"{rashi_info.get('name')} ({rashi_info.get('devanagari')})"
-                degree = data.get('degree_in_rashi', 0)
+        # Run each calculation module
+        self.calculate_gochara_positions(transit_positions, natal_chart)
+        
+        # --- PLACEHOLDER CALLS ---
+        # You need to implement these functions in your AstronomicalCalculator
+        self.calculate_ashtakavarga(transit_positions, natal_chart)
+        self.calculate_varshphal(calc_dt_utc, natal_chart)
+        # --- END PLACEHOLDER ---
+        
+        self.app.status_var.set(f"Calculations complete for {calc_dt_utc.strftime('%d-%b-%Y')}")
 
-                # Use string formatting to align columns
-                text += f"{planet_display:<20}: {rashi_display:<25} {degree:>6.2f}°\n"
+    def calculate_gochara_positions(self, transit_positions: Dict[str, Any], natal_chart: Dict[str, Any]) -> None:
+        """Calculates and displays the planet positions in the Gochara Treeview."""
+        
+        # --- 1. Get Reference Point ---
+        reference_name = self.reference_var.get()
+        reference_planet = "Ascendant"
+        if reference_name == "Natal Moon":
+            reference_planet = "Moon"
+        elif reference_name == "Natal Sun":
+            reference_planet = "Sun"
+            
+        try:
+            # --- FIX: Access natal chart positions ---
+            reference_rashi_num = natal_chart['positions'][reference_planet]['rashi_num'] 
+            # --- END FIX ---
+        except KeyError:
+            messagebox.showerror("Natal Chart Error", f"Could not find '{reference_planet}' in the natal chart data.")
+            return
 
-        text += "\n" + "═"*68 + "\n"
+        # --- 2. Clear old data ---
+        self.transit_tree.delete(*self.transit_tree.get_children())
+        
+        sun_longitude = transit_positions.get('Sun', {}).get('longitude', 0)
 
-        self.transit_text.delete('1.0', tk.END)
-        self.transit_text.insert('1.0', text)
-        self.app.status_var.set("Current transits calculated successfully")
+        for planet_name in self.PLANET_NAMES:
+            if planet_name in transit_positions:
+                pos_data = transit_positions[planet_name]
+                
+                planet_rashi_num = pos_data.get('rashi_num', 1) 
+                sign_name = pos_data['rashi']
+                
+                # --- 3. Get Natal House ---
+                natal_house = (planet_rashi_num - reference_rashi_num) % 12 + 1
+                
+                # --- 4. Get Lords (Fixed) ---
+                sign_lord = self.RASHI_LORDS.get(sign_name, "N/A")
+                nak_lord = self.NAKSHATRA_LORDS.get(pos_data['nakshatra'], "N/A")
 
-    def show_predictions(self) -> None:
-        """Displays static, general-purpose text about transits."""
-        pred_text = """
-╔══════════════════════════════════════════════════════════════════╗
-║                   TRANSIT PREDICTIONS (GENERAL)                  ║
-╚══════════════════════════════════════════════════════════════════╝
-This text provides general information about how to interpret transits.
-For personalized predictions, a transit's position must be compared
-against your unique D1 (Rashi) chart and Dasha periods.
+                # --- 5. Get Dignity & State (Enhanced) ---
+                planet_full_data = self.app.interpreter.planet_data_cache.get(planet_name, {})
+                dignity_str = "Neutral"
+                tags = ['Neutral.Treeview']
+                
+                if planet_full_data: 
+                    dignities = planet_full_data.get('dignities', {})
+                    if sign_name in dignities.get("Exaltation", ""):
+                        dignity_str, tags = "Exalted", ['Exalted.Treeview']
+                    elif sign_name in dignities.get("Debilitation", ""):
+                        dignity_str, tags = "Debilitated", ['Debilitated.Treeview']
+                    elif sign_name in dignities.get("Mooltrikona", ""):
+                        dignity_str, tags = "Mooltrikona", ['Mooltrikona.Treeview']
+                    elif sign_name in dignities.get("Own Sign", ""):
+                        dignity_str, tags = "Own Sign", ['OwnSign.Treeview']
+                    elif planet_name != "Ascendant":
+                        if sign_name in planet_full_data.get("friendly", []):
+                            dignity_str, tags = "Friendly", ['Friendly.Treeview']
+                        elif sign_name in planet_full_data.get("enemy", []):
+                            dignity_str, tags = "Enemy", ['Enemy.Treeview']
 
-KEY TRANSITS TO WATCH:
+                state_list: List[str] = []
+                speed = pos_data.get('speed', 0.0)
+                if speed < 0 and planet_name not in ["Rahu", "Ketu"]:
+                    state_list.append("R")
+                    tags.append('Retro.Treeview')
+                
+                if self.app.interpreter.get_special_state_analysis(planet_name, speed, sun_longitude, pos_data['longitude']).count("Combust"):
+                    state_list.append("C")
+                    tags.append('Combust.Treeview')
 
-🌟 JUPITER (गुरु) TRANSIT:
-   Jupiter stays in a sign for ~1 year. Its transit generally brings
-   expansion, optimism, and growth to the houses it passes through
-   and aspects.
+                state_prefix = f"[{', '.join(state_list)}]" if state_list else ""
+                final_state_str = f"{dignity_str} {state_prefix}".strip()
+                
+                # --- 6. Calculate Nakshatra Pada ---
+                nak_data = next((n for n in self.NAKSHATRA_DATA if n['name'] == pos_data['nakshatra']), None)
+                pada = '?'
+                if nak_data:
+                    nak_longitude = pos_data['longitude']
+                    nak_start = nak_data['longitude_start']
+                    traversed_in_nak = (nak_longitude - nak_start + 360) % 360 # Handle wrap-around
+                         
+                    pada_span = nak_data.get('span', 13.333333) / 4.0
+                    if pada_span > 0:
+                        pada = int(math.floor(traversed_in_nak / pada_span)) + 1
+                        pada = max(1, min(pada, 4))
+                    else:
+                        pada = 1
+                
+                # --- 7. Insert into Tree ---
+                self.transit_tree.insert('', 'end', values=(
+                    planet_name, pos_data['rashi'], sign_lord, pos_data['dms'],
+                    pos_data['nakshatra'], nak_lord, pada, natal_house, final_state_str
+                ), tags=tuple(tags))
 
-♄ SATURN (शनि) TRANSIT:
-   Saturn stays in a sign for ~2.5 years. Its transit demands discipline,
-   patience, and hard work. It solidifies and tests the foundations
-   of the houses it transits.
-   - **Sade Sati (साढ़े साती)**: The famous 7.5-year period when Saturn
-     transits the 12th, 1st, and 2nd houses from your natal Moon.
-     It is a period of intense karmic lessons and restructuring.
+    def calculate_ashtakavarga(self, transit_positions: Dict[str, Any], natal_chart: Dict[str, Any]) -> None:
+        """Calculates and displays Ashtakavarga data, highlighting transit signs."""
+        
+        self.bav_tree.delete(*self.bav_tree.get_children())
+        self.sav_tree.delete(*self.sav_tree.get_children())
+        
+        try:
+            # --- PLACEHOLDER: Implement these methods in AstronomicalCalculator ---
+            # sav_data = self.app.calculator.get_sav(natal_chart) 
+            # bav_data = self.app.calculator.get_bav(natal_chart)
+            # --- END PLACEHOLDER ---
+            
+            # --- Mock data for demonstration ---
+            sav_data = {r: 25 + (i % 8) for i, r in enumerate(self.RASHI_NAMES)}
+            bav_data = {p: {r: 4 + (i % 5) for i, r in enumerate(self.RASHI_NAMES)} for p in self.PLANET_NAMES if p not in ["Rahu", "Ketu"]}
+            # --- End Mock Data ---
+            
+        except AttributeError:
+            self.bav_tree.insert('', 'end', values=("Ashtakavarga functions not implemented.", *["-"]*12))
+            return
+        except Exception as e:
+            self.bav_tree.insert('', 'end', values=(f"Error: {e}", *["-"]*12))
+            return
 
-☊ RAHU-KETU (राहु-केतु) AXIS:
-   The nodes stay in a sign for ~1.5 years. They always move
-   retrograde and are 180° apart.
-   - **Rahu** brings obsession, ambition, and focus to the house it transits.
-   - **Ketu** brings detachment, spirituality, and endings to the house it transits.
+        # Populate BAV Tree
+        for planet in self.PLANET_NAMES:
+            if planet in bav_data:
+                row_data = [planet]
+                bindus_for_planet = bav_data[planet]
+                for rashi in self.RASHI_NAMES:
+                    row_data.append(bindus_for_planet.get(rashi, 0))
+                
+                iid = self.bav_tree.insert('', 'end', values=tuple(row_data))
+                
+                if planet in transit_positions:
+                    transit_rashi = transit_positions[planet]['rashi']
+                    if transit_rashi in self.RASHI_NAMES:
+                        col_index = self.RASHI_NAMES.index(transit_rashi) + 1
+                        self.bav_tree.item(iid, tags=(f'col_highlight_{col_index}',))
 
-═══════════════════════════════════════════════════════════════════
-GENERAL GUIDANCE:
-•  Pay most attention to the slow-moving planets (Saturn, Jupiter, Rahu, Ketu)
-   as they define the major themes in your life.
-•  Fast-moving planets (Sun, Moon, Mars, Mercury, Venus) influence
-   day-to-day events, mood, and timing of short-term events.
-•  Always check transits from your Ascendant (Lagna) and your
-   natal Moon (Chandra Lagna).
-"""
+        # Populate SAV Tree
+        for rashi in self.RASHI_NAMES:
+            bindus = sav_data.get(rashi, 0)
+            self.sav_tree.insert('', 'end', values=(rashi, bindus))
+
+        # Configure highlight tags
+        for i, rashi in enumerate(self.RASHI_NAMES, 1):
+            self.bav_tree.tag_configure(f'col_highlight_{i}', 
+                                        background=self.select_bg, 
+                                        foreground=self.theme_fg,
+                                        font=('Calibri', 11, 'bold'))
+                                        
+    def calculate_varshphal(self, transit_date: datetime, natal_chart: Dict[str, Any]) -> None:
+        """Calculates and displays the Lal Kitab Varshphal for the given year."""
+        
+        self.varshphal_text.config(state='normal')
+        self.varshphal_text.delete('1.0', tk.END)
+        
+        def insert_text(text, tags):
+            self.varshphal_text.insert(tk.END, text, tags)
+            
+        try:
+            # --- PLACEHOLDER: Implement this method in AstronomicalCalculator ---
+            # varshphal_chart = self.app.calculator.get_varshphal_chart(natal_chart, transit_date.year)
+            # --- END PLACEHOLDER ---
+
+            # --- Mock data for demonstration ---
+            varshphal_chart = {
+                'ascendant': {'rashi': 'Leo'},
+                'muntha_house': 7,
+                'muntha_lord': 'Saturn',
+                'planets_in_houses': {
+                    1: ["Sun", "Mercury"], 2: [], 3: ["Ketu"], 4: ["Moon"], 5: [], 6: ["Mars"],
+                    7: ["Saturn"], 8: [], 9: ["Rahu"], 10: ["Jupiter"], 11: [], 12: ["Venus"]
+                }
+            }
+            # --- End Mock Data ---
+            
+            annual_lagna = varshphal_chart['ascendant']['rashi']
+            muntha_house = varshphal_chart['muntha_house']
+            muntha_lord = varshphal_chart['muntha_lord']
+            planets_in_houses = varshphal_chart['planets_in_houses']
+            
+            insert_text(f"Lal Kitab Varshphal: {transit_date.year}-{transit_date.year+1}\n", ("header",))
+            insert_text(f"Analysis for the year starting from the native's birthday in {transit_date.year}.\n\n", ("info",))
+
+            insert_text("Annual Chart Basics\n", ("sub_header",))
+            insert_text(f"• Annual Ascendant (Lagna): \t{annual_lagna}\n", ("normal_text",))
+            insert_text(f"• Muntha (Progressed Lagna): \tIn House {muntha_house}\n", ("normal_text",))
+            insert_text(f"• Year Lord (Muntha Lord): \t{muntha_lord}\n\n", ("normal_text",))
+            
+            insert_text("Planet Positions (Varshphal Kundli)\n", ("sub_header",))
+            
+            for house in range(1, 13):
+                planets = planets_in_houses.get(house, [])
+                planet_str = ", ".join(planets) if planets else "---"
+                insert_text(f"• House {house}: \t{planet_str}\n", ("normal_text",))
+            
+            insert_text("\nNote: This is a simplified overview. Lal Kitab analysis involves complex rules of 'sleeping' planets (Soya Grah), aspects, and combinations.\n", ("info",))
+
+        except AttributeError:
+             insert_text("Lal Kitab Varshphal Error\n", ("header",))
+             insert_text("Function 'get_varshphal_chart' is not yet implemented in the calculator.\n", ("normal_text",))
+        except Exception as e:
+            insert_text("Lal Kitab Varshphal Error\n", ("header",))
+            insert_text(f"Could not generate the annual chart: {e}\n", ("normal_text",))
+            insert_text("Please ensure the natal chart is loaded and the calculator module is functioning.\n", ("info",))
+
+        self.varshphal_text.config(state='disabled')
+
+    def populate_principles_tab_content(self) -> None:
+        """Fills the prediction tab with detailed BPHS and Lal Kitab principles."""
+        
+        self.prediction_text.config(state='normal')
         self.prediction_text.delete('1.0', tk.END)
-        self.prediction_text.insert('1.0', pred_text)
+
+        def insert_text(text, tags):
+            self.prediction_text.insert(tk.END, text, tags)
+
+        insert_text("ASTROLOGICAL TRANSIT (GOCHARA) PRINCIPLES\n", ("header",))
+        insert_text("Note: For personalized predictions, transits must be analyzed from your natal chart ('Janam Kundli') for context. Use the 'Reference' selector.\n\n", ("normal_text",))
+
+        # --- BPHS Section ---
+        insert_text("BPHS Gochara Principles (Classical)\n", ("sub_header",))
+        insert_text(
+            "Classical Vedic astrology (as per BPHS and Phaladeepika) analyzes transits ('Gochara') from three primary reference points:\n"
+            "1. **From the Lagna (Ascendant):** Shows events impacting the 'self', physical body, and overall life direction.\n"
+            "2. **From the Chandra Lagna (Natal Moon):** This is the most important. It shows the transit's effect on the 'Manas' (mind), emotions, and general well-being.\n"
+            "3. **From the Surya Lagna (Natal Sun):** Shows the transit's effect on the 'Atma' (soul), authority, career, and health.\n\n",
+            ("normal_text",)
+        )
+        
+        insert_text("Key Advanced Concepts (BPHS):\n", ("bold_text",))
+        insert_text(
+            "• **Ashtakavarga:** A planet transiting a sign with high (e.g., > 30) SAV bindus will give good results, even if it's a 'bad' house. A planet transiting a sign with high BAV bindus (e.g., > 4) for itself will give excellent results. (See 'Ashtakavarga' tab).\n"
+            "• **Chandrashtama (8th Moon):** When the Moon transits the 8th house from your natal Moon (~2.5 days), it causes emotional distress, confusion, and obstacles. It is a period to avoid major decisions.\n"
+            "• **Vedha (Obstruction):** A planet in an auspicious transit house (e.g., Jupiter in 2nd) may have its good results 'blocked' by another planet (except Sun/Saturn) in a specific 'Vedha' house (e.g., a planet in 12th). This is a critical cancellation rule.\n"
+            "• **Moorti Nirnaya:** The 'form' of a planet as it enters a new sign (based on transiting Moon from natal Moon) determines its results: **Swarna** (Gold, excellent), **Rajata** (Silver, good), **Tamra** (Copper, average), **Loha** (Iron, bad).\n\n",
+            ("normal_text",)
+        )
+        
+        insert_text("General Effects of Major Transits (from Natal Moon):\n", ("bold_text",))
+        
+        insert_text("♄ Saturn (Shani):\n", ("bold_text",))
+        insert_text(
+            "• **Sade Sati (साढ़े साती):** The ~7.5-year period when Saturn transits the 12th, 1st, and 2nd houses from the Moon. A period of intense karmic lessons, restructuring, and maturation. The 1st phase (12H) brings separation and expenses. The 2nd phase (1H) brings pressure on self and health. The 3rd phase (2H) brings family and financial restructuring.\n"
+            "• **Kantaka Shani (कण्टक शनि):** 'Thorn' of Saturn. Occurs when Saturn transits the 4th (domestic peace, mother) or 8th (obstacles, health) from the Moon. Part of 'Small Panoti' or 'Dhaiyya'.\n"
+            "• **10th House Transit:** When Saturn transits the 10th from the Moon, it brings immense career pressure, changes, and responsibility. Forces one to work hard and restructure professional life.\n",
+            ("normal_text",)
+        )
+        
+        insert_text("🌟 Jupiter (Guru):\n", ("bold_text",))
+        insert_text(
+            "• Transits a sign for ~1 year. Brings expansion, optimism, and growth to the house it transits. Its 5th, 7th, and 9th aspects are divine blessings ('Amrita Drishti').\n"
+            "• **Key Auspicious Transits:** 1st (Janma Guru, mixed), 2nd, 5th, 7th, 9th, 11th from the Moon are generally excellent.\n"
+            "• **Inauspicious Transits:** 3rd, 4th, 6th, 8th, 10th, 12th can cause issues without mitigation.\n",
+            ("normal_text",)
+        )
+
+        insert_text("☊ / ☋ Rahu-Ketu Axis:\n", ("bold_text",))
+        insert_text(
+            "• The nodes transit a sign for ~1.5 years (retrograde). They create an axis of intense karmic activity.\n"
+            "• **Rahu:** Brings obsession, ambition, and unconventional desires to the house it transits.\n"
+            "• **Ketu:** Brings detachment, spirituality, and sudden endings/insights to the house it transits.\n"
+            "• **Key Transit:** When the axis transits over the Natal Lagna/7th or Moon/7th-from-Moon, it brings profound confusion and sudden life-changing events.\n",
+            ("normal_text",)
+        )
+        
+        insert_text("—" * 80 + "\n\n", ("separator",))
+
+        # --- Lal Kitab Section ---
+        insert_text("Lal Kitab Transit Perspective (Varshphal)\n", ("sub_header",))
+        insert_text(
+            "**Lal Kitab's system is completely different from BPHS.** It does not use daily Gochara (transits) for major predictions. Its system is based on the **Varshphal (Annual Chart)**, as shown in the 'Lal Kitab' tab.\n\n"
+            "• **Varshphal (Annual Chart):** A new chart is cast for the year (from one birthday to the next) when the Sun returns to its exact natal longitude. This new annual chart is the *only* chart used for predictions for that year.\n"
+            "• **Yearly 'Transit':** In the Varshphal, the planet that lands in the 1st house 'transits' or gives its effect to the *entire chart* for that year. For example, if Jupiter is in the 1st house of the Varshphal, it is a very auspicious year. If Saturn is, it will be a year of hard work and delays.\n"
+            "• **Muntha (Year Lord):** The 'Muntha' is the progressed Ascendant (1 house per year) and is a key point of focus for the year. The planet ruling its sign becomes the 'Year Lord'.\n"
+            "• **'Soya Grah' (Sleeping Planet):** Lal Kitab has a concept of 'sleeping' houses and planets. A planet in a sleeping house (e.g., Saturn in 6th, which 'sleeps' 6th) cannot give its full effect until 'activated' by a remedy or another planet's transit (in the *annual* chart).\n"
+            "• **Gochara (Daily Transit):** Daily transits are given very little importance. They are only seen as minor triggers. The annual Varshphal chart is paramount.\n",
+            ("normal_text",)
+        )
+        self.prediction_text.config(state='disabled')
+
+# --- Utility Functions (Placeholders) ---
+# You must have these or equivalents in your application
+# def get_all_nakshatras_with_long() -> List[Dict[str, Any]]:
+#     """
+#     Placeholder: This function should return a list of dictionaries,
+#     e.g., [{'num': 1, 'name': 'Ashwini', 'longitude_start': 0.0, 'span': 13.33333}, ...]
+#     """
+#     print("Warning: Using placeholder 'get_all_nakshatras_with_long'")
+#     nak_list = []
+#     span = 13.33333333
+#     start_long = 0.0
+#     names = list(NAKSHATRA_LORDS.keys())
+#     for i in range(27):
+#         nak_list.append({
+#             'num': i + 1,
+#             'name': names[i],
+#             'longitude_start': start_long,
+#             'span': span
+#         })
+#         start_long = (start_long + span) % 360
+#     return nak_list
+
 def get_all_nakshatras_with_long() -> List[Dict[str, Any]]:
     """
     Returns Nakshatra data including precise longitude spans.
