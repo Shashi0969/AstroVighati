@@ -43,7 +43,7 @@ import subprocess
 import sys
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox, filedialog
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import threading
 import math
 import json
@@ -52,6 +52,7 @@ from pathlib import Path
 from typing import List, Dict, Tuple, Optional, Any, Callable
 import textwrap
 import pytz
+import re
 # from dateutil.relativedelta import relativedelta # For accurate date math
 
 # --- Dependency Management ---
@@ -265,84 +266,156 @@ class EnhancedAstrologicalData:
     @staticmethod
     def get_varga_descriptions() -> Dict[str, Dict[str, str]]:
         """
-        Provides the detailed descriptions for the 'Varga Meanings' tab.
-        This is a knowledge base synthesized from classical texts.
-
-        Returns:
-            dict: A dictionary where each key (e.g., "D1 - Rashi") maps to
-                  another dictionary containing its "title" and "description".
+        Provides highly detailed descriptions for the 'Varga Meanings' tab.
+        Synthesized from classical texts, primarily BPHS, with Lal Kitab context.
         """
         return {
             "D1 - Rashi": {
                 "title": "D1 - Rashi Kundali (Lagna Chart)",
-                "description": "The Rashi chart is the foundational birth chart, representing existence at the physical level. It is the 'tree' from which all other 'fruits' (Vargas) grow, showing the totality of your life's potential. All planetary positions, aspects, and yogas in this chart manifest on the physical, tangible plane. The Ascendant (Lagna) is the key, representing your personality, health, and life's path."
+                "domain": "The Physical Body, Overall Life, The 'Self'",
+                "bphs_analysis": ("The Rashi chart is the 'Deha' (body) and the foundational chart of existence. BPHS describes it as the 'Vriksha' (tree), from which all other Vargas (fruits) emerge. "
+                                "Its analysis is primary. The Lagna (Ascendant) is the root, representing personality, health, and life path. All yogas, aspects, and planetary positions are first judged from here for their tangible, real-world manifestations."),
+                "key_karakas": "Lagna Lord, Sun (Atma - Soul), Moon (Manas - Mind)",
+                "lal_kitab_analysis": ("**Lal Kitab does not use Varga charts.** The entire system of Lal Kitab astrology is based *only* on the D1 chart, referred to as the 'Kundli'. "
+                                     "However, the Lal Kitab chart has fixed houses (Khana 1 is always Aries' energy, Khana 2 is Taurus', etc.), regardless of the Lagna. "
+                                     "Analysis is based on planet placements in these fixed houses and their unique aspects ('drishti').")
             },
             "D2 - Hora": {
-                "title": "D2 - Hora Chart (Wealth)",
-                "description": "The Hora chart divides each sign into two halves (Horas). This chart is paramount for assessing wealth, financial prosperity, and resources. It reveals your capacity to accumulate and sustain wealth. Planets in the Sun's Hora indicate wealth earned through self-effort and power. Planets in the Moon's Hora suggest wealth accumulated through family or the public."
+                "title": "D2 - Hora Chart (Wealth & Resources)",
+                "domain": "Accumulated Wealth ('Dhana'), Financial Prosperity, Sustenance",
+                "bphs_analysis": ("The Hora chart (2 divisions) assesses wealth and resources. The standard BPHS method (Parashari Hora) assigns planets to the Horas of the Sun (Leo) and Moon (Cancer). "
+                                "Planets in the Sun's Hora indicate wealth earned through self-effort, power, and authority. Planets in the Moon's Hora suggest wealth from family, the public, or nourishment. "
+                                "Benefics in the 2nd house of the D2 chart are excellent. Malefics in the Sun's Hora and benefics in the Moon's Hora are generally considered favorable for wealth generation."),
+                "key_karakas": "Jupiter (Dhanakaraka), 2nd Lord (of D1), Sun, Moon",
+                "lal_kitab_analysis": ("Not Used. Lal Kitab analyzes wealth ('Maaya') primarily from the D1 chart's 2nd house, 11th house, 9th house (Bhagya), and the placements of Jupiter and Venus.")
             },
             "D3 - Drekkana": {
                 "title": "D3 - Drekkana Chart (Siblings & Courage)",
-                "description": "The Drekkana divides each sign into three parts. It provides deep insights into one's siblings (co-borns), courage, initiative, and personal drive. The 3rd house and its lord in D3 are crucial for younger siblings, while the 11th house relates to elder siblings. Mars, as the natural karaka for siblings and courage, is very important here."
+                "domain": "Siblings ('Bhratru'), Courage ('Parakrama'), Initiative, Self-Effort",
+                "bphs_analysis": ("The Drekkana (3 divisions of 10° each) is critical for analyzing siblings and personal drive. The standard Parashari Drekkana (1st, 5th, 9th) is most common. "
+                                "The 3rd house and its lord in D3 analyze younger siblings, while the 11th house/lord analyzes elder siblings. "
+                                "The D3 Lagna Lord's strength shows the native's personal initiative. Malefics in the 3rd or 11th can harm that respective sibling relationship."),
+                "key_karakas": "Mars (Bhratrukaraka - Sibling Karaka), 3rd Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Lal Kitab analyzes siblings *directly* from the D1 chart's 3rd house (fixed) and 11th house (fixed). Mars is the primary 'karaka' planet for siblings (especially brothers).")
             },
             "D4 - Chaturthamsa": {
                 "title": "D4 - Chaturthamsa Chart (Property & Fortune)",
-                "description": "This chart (also Turyamsa) divides each sign into four parts. It is analyzed for matters of property, land, homes, vehicles, and one's overall fortune ('Bhagya') related to fixed assets and domestic happiness. The 4th house, its lord, the Moon (home), and Venus (vehicles) are key."
+                "domain": "Fortune ('Bhagya'), Property, Land, Homes ('Griha'), Vehicles ('Vahana')",
+                "bphs_analysis": ("The Chaturthamsa (4 divisions of 7.5° each) is analyzed for fixed assets and domestic happiness ('Sukha'). Some classics also link it to 'Bhagya' (fortune). "
+                                "The 4th house, its lord, the Moon (home), and Venus (vehicles) from the D1 chart are analyzed here. "
+                                "The D4 Lagna Lord's strength and placement are key. Benefics in Kendras/Trikonas of D4 promise happiness from property; malefics can cause issues or loss of assets."),
+                "key_karakas": "Moon (Mother, Home), Venus (Vehicles), Mars (Land), 4th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Lal Kitab analyzes property and vehicles *directly* from the D1 chart's 4th house (fixed), which is the 'Pakka Ghar' (permanent house) of the Moon. Saturn (construction) and Mars (land) are also key planets.")
             },
             "D5 - Panchamsa": {
                 "title": "D5 - Panchamsa Chart (Fame, Power & Authority)",
-                "description": "Divides each sign into five parts. This chart reveals one's creative abilities, past life merits (purva punya), fame, power, authority, and followers. It is a key chart for politicians, artists, and leaders. The strength of the Sun, Jupiter, and the D5 Lagna lord are crucial."
+                "domain": "Past Life Merits ('Purva Punya'), Fame, Power, Authority, Followers",
+                "bphs_analysis": ("The Panchamsa (5 divisions) reveals one's authority, following, and merits from past lives that fuel this life's status. It is a key chart for politicians, artists, and leaders. "
+                                "The strength of the D5 Lagna, its lord, and the placement of 'karaka' planets like the Sun (authority) and Jupiter (wisdom) are crucial for assessing one's capacity to lead and influence others."),
+                "key_karakas": "Jupiter (Wisdom), Sun (Authority), 5th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Lal Kitab analyzes fame and authority from the D1 chart's 1st, 5th, 9th, and 10th houses, with the Sun (Sarkar) and Jupiter (respect) as key planets.")
             },
             "D6 - Shashthamsa": {
-                "title": "D6 - Shashthamsa Chart (Health & Diseases)",
-                "description": "Divides each sign into six parts. It is a critical chart for a microscopic analysis of health, diseases, debts, and conflicts. The 6th house, its lord, and malefics like Saturn and Mars reveal the nature and timing of health struggles. The D6 Lagna represents overall vitality."
+                "title": "D6 - Shashthamsa Chart (Health, Debts & Enemies)",
+                "domain": "Health ('Roga'), Diseases, Debts ('Rina'), Enemies ('Shatru'), Service",
+                "bphs_analysis": ("The Shashthamsa (6 divisions) is a critical chart for a microscopic analysis of health, diseases, debts, and conflicts. "
+                                "The 6th house, its lord, and 'karaka' planets Saturn (chronic illness) and Mars (acute issues, injuries) from the D1 chart are analyzed here. "
+                                "The D6 Lagna represents overall vitality and the weak points of the body. Malefics here can pinpoint the nature of health struggles."),
+                "key_karakas": "Saturn (Disease, Service), Mars (Conflict, Injury), 6th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Lal Kitab analyzes health and enemies *directly* from the D1 chart's 6th house (fixed), which is the 'Pakka Ghar' of Ketu. Mercury and Ketu are key planets for diagnosing issues here.")
             },
             "D7 - Saptamsa": {
                 "title": "D7 - Saptamsa Chart (Children & Progeny)",
-                "description": "The Saptamsa divides each sign into seven parts. It is the primary chart for all matters related to children, grandchildren, and one's creative legacy. It shows the potential for having children, their well-being, and the relationship with them. Jupiter is the most important planet, and the 5th house (first child), 7th (second), and 9th (third) are analyzed."
+                "domain": "Children ('Putra'), Grandchildren, Procreative Capacity, Creative Legacy",
+                "bphs_analysis": ("The Saptamsa (7 divisions) is the primary chart for all matters related to children. It shows the potential for having children, their well-being, and the relationship with them. "
+                                "The D7 Lagna shows the circumstances of progeny. The 5th house/lord in D7 is seen for the first child, 7th for the second, 9th for the third, and so on (counting in alternate houses)."),
+                "key_karakas": "Jupiter (Putrakaraka), 5th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Lal Kitab analyzes children *directly* from the D1 chart's 5th house (fixed), which is the 'Pakka Ghar' of Jupiter. Ketu is also considered a 'karaka' for 'aulad' (son).")
             },
             "D9 - Navamsa": {
                 "title": "D9 - Navamsa Chart (Spouse, Dharma & Fortune)",
-                "description": "Arguably the most important Varga, the Navamsa (nine divisions) is the 'fruit' of the D1 'tree'. Its primary indication is marriage, the spouse, and marital life. Beyond that, it represents one's dharma (righteous path), inner self, skills, and overall fortune, especially in the second half of life. A planet's position here reveals its true inner strength. A planet in the same sign in D1 and D9 is 'Vargottama' and becomes exceptionally powerful."
+                "domain": "Marriage ('Kalatra'), Spouse, Dharma, Inner Self, Fortune (post-marriage)",
+                "bphs_analysis": ("**Arguably the most important Varga.** BPHS states the D1 is the 'tree' and the D9 is the 'fruit' ('Phala'). A planet's true strength and ability to deliver results is seen from its D9 dignity. "
+                                "Its primary use is for marriage, the nature/quality of the spouse (from D9 Lagna), and marital life (from 7th house in D9). "
+                                "It also represents one's 'Dharma' (righteous path) and overall 'Bhagya' (fortune) after marriage. A planet in the same sign in D1 and D9 is **Vargottama** and becomes exceptionally powerful to give results."),
+                "key_karakas": "Venus (Kalatrakaraka), Jupiter (Husband Karaka), 7th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Lal Kitab analyzes marriage, spouse, and marital life *only* from the D1 chart's 7th house (fixed) and the placement of Venus (for male) or Jupiter (for female).")
             },
             "D10 - Dasamsa": {
                 "title": "D10 - Dasamsa Chart (Career & Profession)",
-                "description": "The Dasamsa (ten divisions) is the microscopic view of the 10th house, representing one's career, profession, status, and achievements in society. The 10th house, its lord, and karakas like the Sun (authority), Mercury (commerce), and Saturn (service) are key. The D10 Lagna shows the environment of one's work."
+                "domain": "Career ('Karma'), Profession, Public Status, Achievements, Livelihood",
+                "bphs_analysis": ("The Dasamsa (10 divisions) is the microscopic view of the 10th house. It represents one's 'Karma' (actions) in society, profession, and achievements. "
+                                "The D10 Lagna shows the work environment and how one is perceived. The 10th house/lord of D10 shows the peak of one's career. "
+                                "Planets in Kendras/Trikonas in D10 give a strong career. The 7th house of D10 can indicate business."),
+                "key_karakas": "Saturn (Karma), Sun (Status), Mercury (Commerce), 10th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Lal Kitab analyzes career *only* from the D1 chart's 10th house (fixed), which is the 'Pakka Ghar' of Saturn. The conditions of Saturn, Sun, and Jupiter are paramount.")
             },
             "D12 - Dwadasamsa": {
                 "title": "D12 - Dwadasamsa Chart (Parents & Lineage)",
-                "description": "This chart (twelve divisions) is used to analyze one's parents, grandparents, and ancestral lineage. It shows the karma inherited from one's lineage. The 4th house and Moon relate to the mother, while the 9th house and Sun relate to the father. Afflictions can indicate ancestral curses or inherited health issues."
+                "domain": "Parents ('Pitra/Matra'), Grandparents, Ancestral Lineage, Inherited Karma",
+                "bphs_analysis": ("This chart (12 divisions) is used to analyze one's parents, grandparents, and ancestral lineage. It shows the karma and legacy (both good and bad) inherited from them. "
+                                "In D12, analyze the 4th house and Moon for the mother, and the 9th house and Sun for the father. Afflictions in this chart are a strong indicator of 'Pitra Dosha' (ancestral curses)."),
+                "key_karakas": "Sun (Father), Moon (Mother), 4th & 9th Lords (of D1)",
+                "lal_kitab_analysis": ("Not Used. Lal Kitab diagnoses 'Pitra Rin' (ancestral debt) *directly* from D1 combinations (e.g., Jupiter in H5, Venus in H2, Sun in H1/H11). It does not use a separate chart for this.")
             },
             "D16 - Shodasamsa": {
-                "title": "D16 - Shodasamsa Chart (Vehicles, Comforts & Discomforts)",
-                "description": "Also known as Kalamsa, this chart (sixteen divisions) is analyzed for vehicles, luxuries, and general comforts and discomforts. It is a chart of material pleasures. Venus is the natural karaka, and the 4th house in D16 is key. Malefics like Mars or Saturn can indicate accidents or breakdowns."
+                "title": "D16 - Shodasamsa Chart (Vehicles & Comforts)",
+                "domain": "Vehicles ('Vahana'), Luxuries, General Comforts ('Sukha') and Discomforts ('Asukha')",
+                "bphs_analysis": ("Also known as Kalamsa, this chart (16 divisions) is analyzed for happiness from material pleasures. "
+                                "Venus (karaka for vehicles/luxury) and the 4th house/lord in D16 are key. Malefics like Mars or Saturn here can indicate accidents, breakdowns, or dissatisfaction with one's comforts. Benefics promise enjoyment of high-end vehicles and luxuries."),
+                "key_karakas": "Venus (Vahana Karaka), 4th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Vehicles and comforts are seen *directly* from the D1 chart's 4th house (fixed) and the planet Venus.")
             },
             "D20 - Vimsamsa": {
                 "title": "D20 - Vimsamsa Chart (Spiritual Pursuits)",
-                "description": "This chart (twenty divisions) assesses one's spiritual inclinations, religious devotion, worship, and progress on the spiritual path. Jupiter (wisdom) and Ketu (moksha/liberation) are most important. The 9th house in D20 indicates one's spiritual practices and guru."
+                "domain": "Spiritual Inclinations ('Upasana'), Religious Devotion, Worship, Siddhis",
+                "bphs_analysis": ("This chart (20 divisions) assesses one's spiritual inclinations, religious devotion, and progress on the spiritual path. "
+                                "The D20 Lagna lord, 9th house, Jupiter (wisdom), and Ketu (moksha) are key. Benefics here show a pious, devotional nature. Malefics (Rahu, Saturn, Mars) can indicate unorthodox spiritual paths, breaks in practice, or interest in tantric/occult forms of worship."),
+                "key_karakas": "Jupiter (Guru, Dharma), Ketu (Moksha), 9th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Spirituality is seen from the D1 chart's 9th and 12th houses, and the placements of Jupiter and Ketu.")
             },
             "D24 - Siddhamsa": {
                 "title": "D24 - Siddhamsa Chart (Education & Knowledge)",
-                "description": "The Siddhamsa (twenty-four divisions) is for a detailed analysis of formal education, learning capacity (Vidya), and academic achievements. Mercury (intellect) and Jupiter (knowledge) are key. The 4th house shows formal schooling and the 5th shows intelligence and scholarships."
+                "domain": "Formal Education ('Vidya'), Learning Capacity, Knowledge ('Jnana'), 'Siddhi' (Mastery)",
+                "bphs_analysis": ("The Siddhamsa (24 divisions) is for a detailed analysis of formal education, learning capacity, and academic achievements. "
+                                "Mercury (intellect) and Jupiter (knowledge) are key. The 4th house/lord in D24 shows formal schooling, and the 5th house/lord shows intelligence ('Dhi') and scholarships. "
+                                "BPHS recommends seeing this chart for all matters of learning."),
+                "key_karakas": "Mercury (Buddhi), Jupiter (Jnana), 5th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Education is seen *directly* from the D1 chart's 2nd, 4th, and 5th houses, and the planets Mercury and Jupiter.")
             },
             "D30 - Trimsamsa": {
                 "title": "D30 - Trimsamsa Chart (Misfortunes & Character)",
-                "description": "This chart has a unique irregular division system. It is primarily used to analyze evils, misfortunes, punishments, and character weaknesses. It reveals the source of karmic difficulties. Malefics like Saturn and Mars ruling or influencing the D30 Lagna can indicate significant life struggles."
+                "domain": "Evils ('Arishta'), Misfortunes, Character Flaws, Punishments, Health",
+                "bphs_analysis": ("This chart has a unique irregular division system ruled *only* by the 5 inner planets (Mars, Sat, Jup, Merc, Ven). It is primarily used to analyze evils, misfortunes, and character weaknesses. "
+                                "BPHS places great importance on this chart for analyzing a *female's character* (though it applies to all). Malefics ruling or influencing the D30 Lagna, especially when the D1 Lagna is in a malefic Trimsamsa, can indicate significant life struggles and health issues."),
+                "key_karakas": "Saturn (Sorrow), Mars (Conflict), 8th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Misfortunes and character are seen from the D1 chart's 8th house, 1st house, and the general placement of malefic planets like Saturn, Rahu, and Ketu.")
             },
             "D40 - Khavedamsa": {
-                "title": "D40 - Khavedamsa Chart (Auspicious/Inauspicious - Maternal)",
-                "description": "This chart (forty divisions) is used to determine the specific auspicious and inauspicious karmic effects inherited from the maternal lineage. The Moon's condition is significant. A predominance of benefics in Kendras/Trikonas suggests fortune from the mother's side."
+                "title": "D40 - Khavedamsa Chart (Maternal Lineage Karma)",
+                "domain": "Auspicious/Inauspicious Effects from Maternal Lineage",
+                "bphs_analysis": ("This chart (40 divisions) is used to determine the specific auspicious ('Shubha') and inauspicious ('Ashubha') karmic effects inherited from the maternal lineage. "
+                                "The Moon (Matrukaraka) and Venus (female karaka) are key. The 4th house/lord in D40 and the D40 Lagna lord's strength are analyzed. Benefics in Kendras/Trikonas suggest fortune and blessings from the mother's side."),
+                "key_karakas": "Moon (Mother), Venus (Female), 4th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Maternal lineage issues are seen via the D1 chart's 6th house (Maternal Uncle/Family) and the condition of the Moon.")
             },
             "D45 - Akshavedamsa": {
-                "title": "D45 - Akshavedamsa Chart (Character & Paternal Lineage)",
-                "description": "This chart (forty-five divisions) assesses the karmic inheritance from the paternal lineage and its influence on one's general character and moral compass. The Sun's condition is significant. The strength of the D45 Lagna lord indicates the moral fiber of the individual."
+                "title": "D45 - Akshavedamsa Chart (Paternal Lineage Karma)",
+                "domain": "Auspicious/Inauspicious Effects from Paternal Lineage, General Character",
+                "bphs_analysis": ("This chart (45 divisions) assesses the karmic inheritance from the paternal lineage and its influence on one's general character and moral compass. "
+                                "The Sun (Pitrukaraka) and Jupiter (Dharma) are key. The 9th house/lord in D45 and the D45 Lagna lord's strength indicate the moral fiber of the individual and the legacy from the father's side."),
+                "key_karakas": "Sun (Father), Jupiter (Dharma), 9th Lord (of D1)",
+                "lal_kitab_analysis": ("Not Used. Paternal lineage issues ('Pitra Rin') are seen via the D1 chart's 9th, 5th, and 2nd houses and the condition of the Sun and Jupiter.")
             },
             "D60 - Shashtyamsa": {
                 "title": "D60 - Shashtyamsa Chart (Past Karma & All Matters)",
-                "description": "A highly sensitive and important chart (sixty divisions) that requires a very precise birth time. Sage Parashara gives this chart great weight, stating it reveals the fine print of karma from past lives and is used as a final confirmatory tool for all matters. A good D1 chart can be altered by a bad D60, and vice versa. If the Lagna and planets fall in benefic Shashtyamsas, life will be fortunate."
+                "domain": "All Matters, Fine-Print of Past Life Karma",
+                "bphs_analysis": ("**A highly sensitive and critical chart** (sixty 0.5-degree divisions) that requires a *perfectly accurate* birth time. Sage Parashara gives this chart great weight, stating it should be used for *all* matters and can override the D1 chart for general results. "
+                                "It reveals the finest details of karma from past lives. The *Deity* of the D60 Lagna (e.g., Ghora, Saumya, Nirmala) is extremely indicative of the life's karmic flavor. A planet in a benefic deity's amsha gives good results, while one in a malefic deity's amsha gives terrible results."),
+                "key_karakas": "Lagna, All Planets (analyzed by their Deity)",
+                "lal_kitab_analysis": ("Not Used. Lal Kitab has its own complex system of 'karmic debt' ('Rin') and past-life influences diagnosed *only* from the D1 chart, without using any divisional charts.")
             }
         }
-
     @staticmethod
     def get_all_planets() -> List[Dict[str, Any]]:
         """
@@ -931,17 +1004,14 @@ class EnhancedAstrologicalData:
 
 
 
+import math
+from typing import List, Dict, Tuple, Optional, Any
+
 class InterpretationEngine:
     """
     The analytical core of the application.
-
-    This class holds the "brains" of the astrological analysis. It contains
-    a knowledge base of interpretive text derived from classical principles.
-    It generates dynamic, context-aware analysis for planets in signs,
-    houses, and divisional charts.
+    Contains enhanced BPHS and Lal Kitab interpretations.
     """
-
-    # Class-level constants for combustion orbs (in degrees)
     DEFAULT_COMBUSTION_ORB: float = 8.5
     COMBUSTION_ORBS_SPECIAL: Dict[str, float] = {
         "Venus": 8.0,
@@ -950,208 +1020,499 @@ class InterpretationEngine:
     }
 
     def __init__(self, app_instance: 'AstroVighatiElite') -> None:
-        """
-        Args:
-            app_instance (AstroVighatiElite): A reference to the main app.
-        """
         self.app = app_instance
+        # --- Cache data for fast lookups ---
+        self.planet_data_cache = {p['name']: p for p in self.app.astro_data.get_all_planets()}
+        self.rashi_data_cache = {r['name']: r for r in self.app.astro_data.get_all_rashis()}
+        
+        # --- Enhanced Knowledge Bases ---
+        self._init_bphs_kb()
+        self._init_lk_kb()
+        self._init_conjunction_kb()
 
     def get_planet_in_house_analysis(self, planet_name: str, house_num: int, varga_num: int = 1) -> str:
         """
-        Provides a contextual interpretation for a planet in a specific house,
-        dynamically tailored to the Varga chart being analyzed.
-
-        Args:
-            planet_name (str): The name of the planet (e.g., "Mars").
-            house_num (int): The house number (1-12).
-            varga_num (int): The varga number (1 for D1, 9 for D9, etc.).
-
-        Returns:
-            str: A formatted string analyzing this specific placement.
+        Provides detailed BPHS & Lal Kitab interpretation for a planet in a house,
+        dynamically tailored to the Varga.
         """
-        # 1. Get the name of the Varga chart (e.g., "D9 - Navamsa Chart")
+        # 1. Get Varga Context
         varga_key = f"D{varga_num}"
-        varga_info = EnhancedAstrologicalData.get_varga_descriptions().get(varga_key, {})
-        # Fallback for keys that are formatted like "D1 - Rashi"
+        varga_info = self.app.astro_data.get_varga_descriptions().get(varga_key, {})
         if not varga_info:
-            # Search for keys starting with the varga_key
-            for key, info in EnhancedAstrologicalData.get_varga_descriptions().items():
+            for key, info in self.app.astro_data.get_varga_descriptions().items():
                 if key.startswith(varga_key):
-                    varga_info = info
-                    break
-                    
+                    varga_info = info; break
         varga_context = varga_info.get("title", f"D{varga_num} chart")
+        domain_text = varga_info.get("domain", "this area of life")
 
-
-        # 2. Get the general meaning of the house
+        # 2. Get House Context
         house_significations: Dict[int, str] = {
-            1: "self, physical body, appearance, overall personality",
-            2: "wealth, family, speech, assets",
-            3: "courage, younger siblings, communication, short journeys",
-            4: "mother, home, properties, happiness, education",
-            5: "children, intelligence, creativity, past-life merits (purva punya)",
-            6: "enemies, health issues, service, daily work, obstacles",
-            7: "spouse, partnerships, business, relationships",
-            8: "longevity, hidden matters, inheritance, sudden events, transformation",
-            9: "father, guru, fortune, higher knowledge, dharma",
-            10: "career, public status, actions in society (karma), achievements",
-            11: "gains, income, elder siblings, fulfillment of desires",
-            12: "losses, expenses, spirituality, liberation (moksha), foreign lands"
+            1: "self, physical body, personality, and life's path", 2: "wealth, family, speech, and resources",
+            3: "courage, siblings, communication, and self-efforts", 4: "mother, home, happiness, and property",
+            5: "children, intellect, creativity, and past-life merits", 6: "enemies, health, service, and obstacles",
+            7: "spouse, partnerships, and public image", 8: "longevity, hidden matters, inheritance, and transformation",
+            9: "father, guru, fortune, and higher knowledge (dharma)", 10: "career, public status, and actions (karma)",
+            11: "gains, income, elder siblings, and desires", 12: "losses, expenses, spirituality, and liberation (moksha)"
         }
-
-        # 3. Get the specific domain of the Varga
-        varga_domain: Dict[int, str] = {
-            1: "life in general", 2: "matters of wealth", 3: "siblings and courage", 4: "property and comfort",
-            5: "fame and authority", 6: "health and conflicts", 7: "children and creativity", 9: "dharma and marriage",
-            10: "career and actions", 12: "parents and lineage", 16: "vehicles and pleasures", 20: "spiritual pursuits",
-            24: "education and learning", 30: "misfortunes and character", 40: "maternal karma", 45: "paternal karma", 60: "past karma"
-        }
-
-        # 4. Get the core nature of the planet
-        planet_nature: Dict[str, str] = {
-            "Sun": "authority, soul, and leadership", "Moon": "emotions, mind, and nurturing",
-            "Mars": "energy, action, and conflict", "Mercury": "intellect, communication, and analysis",
-            "Jupiter": "wisdom, expansion, and fortune", "Venus": "love, harmony, and luxury",
-            "Saturn": "discipline, structure, and karma", "Rahu": "obsession, ambition, and foreign influences",
-            "Ketu": "detachment, spirituality, and intuition"
-        }
-
-        # 5. Build the final interpretation string
-        domain_text = varga_domain.get(varga_num, "this area of life")
         house_text = house_significations.get(house_num, "an unknown area")
-        planet_text = planet_nature.get(planet_name, "its inherent energy")
 
-        # Get correct suffix (1st, 2nd, 3rd, 4th...)
+        # 3. Get Suffix
         house_suffix = "th"
-        if house_num in [1, 21, 31]: house_suffix = "st"
+        if house_num in [1, 21]: house_suffix = "st"
         elif house_num in [2, 22]: house_suffix = "nd"
         elif house_num in [3, 23]: house_suffix = "rd"
 
-        return (f"In {varga_context}, the placement of **{planet_name}** in the "
-                f"**{house_num}{house_suffix} house** influences '{house_text}' "
-                f"within the domain of **{domain_text}**. This indicates that the "
-                f"native's {planet_text} will strongly manifest in these specific matters.")
+        # 4. Generate Analysis
+        # --- For D1, provide detailed BPHS and Lal Kitab ---
+        if varga_num == 1:
+            bphs_analysis = self.bphs_kb.get(planet_name, {}).get(house_num, "No specific BPHS analysis found for this placement.")
+            lk_analysis = self.lk_kb.get(planet_name, {}).get(house_num, "No specific Lal Kitab analysis found for this placement.")
+            
+            return (f"**{planet_name} in the {house_num}{house_suffix} House (D1 Rashi)**:\n"
+                    f"• **Context**: In the main **Rashi Chart**, this house represents **{house_text}**.\n\n"
+                    f"• **BPHS / Classical**: {bphs_analysis}\n\n"
+                    f"• **Lal Kitab**: {lk_analysis}")
+        
+        # --- For other Vargas, provide contextual analysis ---
+        else:
+            planet_nature_full = self.planet_data_cache.get(planet_name, {}).get("karaka", "its energy")
+            planet_nature = planet_nature_full.split(',')[0].lower() # Get first karaka
+            
+            return (f"**{planet_name} in the {house_num}{house_suffix} House ({varga_key})**:\n"
+                    f"• **Context**: In the **{varga_context}**, this house relates to **{house_text}** within the specific domain of **{domain_text}**.\n"
+                    f"• **Interpretation**: This suggests that the native's **{planet_nature}** is deeply connected to these specific matters. The planet's strength and dignity in this Varga will determine the quality (auspicious or challenging) of the results.")
 
     def get_planet_in_sign_analysis(self, planet_name: str, sign_name: str) -> str:
         """
-        Provides a basic interpretation for a planet in a specific sign
-        by comparing their elemental natures.
-
-        Args:
-            planet_name (str): The name of the planet (e.g., "Sun").
-            sign_name (str): The name of the sign (e.g., "Aries").
-
-        Returns:
-            str: A formatted string analyzing this placement.
+        Provides detailed BPHS interpretation for a planet in a sign,
+        including dignity and elemental/modal interaction.
         """
-        planet_data = next((p for p in EnhancedAstrologicalData.get_all_planets() if p['name'] == planet_name), None)
-        sign_data = next((r for r in EnhancedAstrologicalData.get_all_rashis() if r['name'] == sign_name), None)
+        planet_data = self.planet_data_cache.get(planet_name)
+        sign_data = self.rashi_data_cache.get(sign_name)
+        if not planet_data or not sign_data: return "Analysis not available."
 
-        if not planet_data or not sign_data:
-            return "Analysis not available."
+        # 1. Dignity Calculation (BPHS)
+        dignity = "Neutral Sign"
+        dignities = planet_data.get('dignities', {})
+        if sign_name in dignities.get("Exaltation", ""): dignity = "🌟 **Exalted (Uchcha)**"
+        elif sign_name in dignities.get("Debilitation", ""): dignity = "🔥 **Debilitated (Neecha)**"
+        elif sign_name in dignities.get("Mooltrikona", ""): dignity = "👑 **Mooltrikona** (Root Trine)"
+        elif sign_name in dignities.get("Own Sign", ""): dignity = "🏡 **Own Sign (Swakshetra)**"
+        elif planet_name != "Ascendant":
+            if sign_name in planet_data.get("friendly", []): dignity = "🤝 Friendly Sign"
+            elif sign_name in planet_data.get("enemy", []): dignity = "⚔️ Enemy Sign"
+            elif sign_name in planet_data.get("neutral", []): dignity = "😐 Neutral Sign"
+        
+        # 2. Elemental/Modal Analysis
+        planet_element = planet_data.get("element", "?")
+        sign_element = sign_data.get("tattva", "?")
+        modality = sign_data.get("modality", "?")
+        
+        harmony = "neutral"
+        if planet_element == sign_element: harmony = "a **harmonious** (same element)"
+        elif (planet_element == "Fire (Agni)" and sign_element == "Air (Vayu)") or \
+             (planet_element == "Air (Vayu)" and sign_element == "Fire (Agni)") or \
+             (planet_element == "Earth (Prithvi)" and sign_element == "Water (Jala)") or \
+             (planet_element == "Water (Jala)" and sign_element == "Earth (Prithvi)"):
+            harmony = "a **supportive** (friendly element)"
+        elif planet_name in ["Rahu", "Ketu"]: harmony = "an **unconventional**"
+        else: harmony = "a **challenging** (enemy element)"
 
-        planet_element = planet_data.get("element")
-        sign_element = sign_data.get("tattva")
-        modality = sign_data.get("modality")
+        bphs_analysis = f"The {planet_element} nature of {planet_name} interacts in {harmony} way with the {sign_element} and {modality} nature of {sign_name}."
 
-        # Compare elements to find harmony or tension
-        harmony = "harmoniously"
-        if planet_element is None: # For nodes Rahu/Ketu
-            harmony = "uniquely"
-        elif planet_element != sign_element:
-            harmony = "with some tension, requiring adaptation"
-
-        # Safely access significations, providing a fallback
-        significations = planet_data.get('significations', [])
-        sig1 = significations[0].lower() if significations else "its primary function"
-        sig2 = significations[1].lower() if len(significations) > 1 else "its secondary function"
-
-
-        return (f"**{planet_name}** in **{sign_name}**: The {planet_element} nature of "
-                f"{planet_name} interacts with the {sign_element}, {modality} "
-                f"nature of {sign_name}. This placement suggests that the "
-                f"planet's energies will express themselves {harmony}. The native will "
-                f"approach {sig1} and "
-                f"{sig2} with the qualities of "
-                f"{sign_data.get('description', '').lower().replace('represents', '').strip()}")
+        # 3. Lal Kitab Dignity
+        sign_num = EnhancedAstrologicalData.SIGN_NAME_TO_NUM.get(sign_name, 0)
+        lk_dignity = sign_data.get("lal_kitab_note", "").split('.')[0] # Get first sentence
+        
+        return (f"**{planet_name}** in **{sign_name}** ({dignity}):\n"
+                f"• **BPHS**: {bphs_analysis}\n"
+                f"• **Lal Kitab**: {lk_dignity} (Energy of House {sign_num}).")
 
     def get_special_state_analysis(self, planet_name: str, speed: float, sun_longitude: float, planet_longitude: float) -> str:
         """
-        Checks for and interprets special planetary states like
-        Retrograde (Vakri) and Combust (Asta).
-
-        Args:
-            planet_name (str): The name of the planet.
-            speed (float): The planet's speed (negative if retrograde).
-            sun_longitude (float): The D1 longitude of the Sun.
-            planet_longitude (float): The D1 longitude of the planet.
-
-        Returns:
-            str: A formatted string describing any special states, or "" if none.
+        Provides detailed BPHS & Lal Kitab interpretation for Retrograde and Combust states.
         """
         analysis: List[str] = []
+        if planet_name in ["Rahu", "Ketu"]: # Nodes are always retrograde
+            return "" # No special analysis needed, it's their nature
 
         # 1. Retrograde Check
         if speed < 0:
-            analysis.append(f"**{planet_name} is Retrograde (Vakri)**: This indicates that the planet's energies are turned inward. It may cause delays, introspection, or an unconventional approach to the planet's significations. It often brings karmic matters to the forefront for resolution.")
+            bphs_retro = "Retrograde (Vakri) gives 'Cheshta Bala' (motional strength). This makes the planet exceptionally powerful to give its results, for good or bad (like an exalted planet). It may also indicate an unconventional approach or the fulfillment of an unfulfilled desire from a past life."
+            lk_retro = "In Lal Kitab, a retrograde (vakri) planet is unpredictable. It may give the results of the *previous* house, or act with double intensity. It is not considered simply 'strong' but 'unruly'."
+            analysis.append(f"**Retrograde (Vakri)**:\n  • **BPHS**: {bphs_retro}\n  • **Lal Kitab**: {lk_retro}")
 
         # 2. Combustion Check
-        if planet_name not in ["Sun", "Rahu", "Ketu"]:
-            # Set the 'orb' or distance for combustion, which varies by planet
+        if planet_name != "Sun":
             combustion_orb = self.DEFAULT_COMBUSTION_ORB
-            if planet_name == "Venus":
-                combustion_orb = self.COMBUSTION_ORBS_SPECIAL["Venus"]
-            elif planet_name == "Mercury":
-                combustion_orb = self.COMBUSTION_ORBS_SPECIAL["Mercury_Direct"] if speed > 0 else self.COMBUSTION_ORBS_SPECIAL["Mercury_Retrograde"]
+            if planet_name == "Venus": combustion_orb = self.COMBUSTION_ORBS_SPECIAL["Venus"]
+            elif planet_name == "Mercury": combustion_orb = self.COMBUSTION_ORBS_SPECIAL["Mercury_Direct"] if speed > 0 else self.COMBUSTION_ORBS_SPECIAL["Mercury_Retrograde"]
 
-            # Find the absolute distance between the planet and the Sun
             separation = abs(planet_longitude - sun_longitude)
-            # Handle the 360-degree wrap-around
-            if separation > 180:
-                separation = 360 - separation
+            if separation > 180: separation = 360 - separation
 
             if separation <= combustion_orb:
-                analysis.append(f"**{planet_name} is Combust (Asta)**: Being very close to the Sun, its significations are 'burnt' or overpowered by the Sun's ego and authority. This can weaken the planet's ability to give independent results, making its expression dependent on the Sun's agenda.")
+                bphs_comb = f"Combust (Asta). Within {combustion_orb:.1f}°, {planet_name}'s significations (e.g., intellect for Mercury, love for Venus) are 'burnt' or overpowered by the Sun's ego. The planet loses its independent power and acts as an agent for the Sun."
+                lk_comb = f"The planet is 'Ast' (Combust) or 'sleeping'. Its results are weakened or merged with the Sun. It may require remedies (upay) to 'awaken' it or separate its effect from the Sun's."
+                analysis.append(f"**Combust (Asta)**:\n  • **BPHS**: {bphs_comb}\n  • **Lal Kitab**: {lk_comb}")
 
-        return "\n".join(analysis) if analysis else ""
+        return "\n\n".join(analysis) if analysis else ""
 
     def get_conjunction_analysis(self, planets_in_house: List[Dict[str, Any]]) -> str:
         """
-        Provides interpretation for planetary conjunctions (yogas)
-        when two or more planets are in the same house.
-
-        Args:
-            planets_in_house (list): A list of planet data dictionaries.
-
-        Returns:
-            str: A formatted string analyzing the conjunction, or "" if none.
+        Provides detailed BPHS & Lal Kitab interpretations for planetary conjunctions.
         """
-        if len(planets_in_house) < 2:
-            return ""
-
+        if len(planets_in_house) < 2: return ""
         planet_names = sorted([p['name'] for p in planets_in_house])
-
-        # A simple knowledge base for common conjunctions
-        conjunction_kb: Dict[Tuple[str, ...], str] = {
-            # This is a "tuple" (immutable list) used as a dictionary key.
-            # Order matters, so we use the sorted 'planet_names' list.
-            ('Mercury', 'Sun'): "This forms **Budha-Aditya Yoga**, a combination for sharp intellect, communication skills, and success in academic or commercial fields. The person is often learned and respected.",
-            ('Mars', 'Saturn'): "A challenging conjunction of two powerful malefics. It can give immense discipline and drive for technical fields but may also bring frustration, accidents, or conflict. It requires careful channeling of energy.",
-            ('Jupiter', 'Venus'): "A conjunction of the two Gurus (teachers). It can give great knowledge, wealth, and refinement. However, as they are natural enemies, it can sometimes lead to conflicts in ideology or relationships.",
-            ('Moon', 'Saturn'): "This forms **Punarphoo Dosha** or **Vish Yoga** (Poison Yoga). It can cause moodiness, depression, delays, and obstacles. It is a karmic combination that teaches patience and detachment through emotional hardship."
-            # More combinations can be (and should be) added here
-        }
-
-        analysis = [f"**Conjunction in this house:** The presence of {', '.join(planet_names)} together creates a powerful fusion of energies."]
-
-        # Check all possible pairs in the conjunction
+        
+        analysis: List[str] = []
+        # Find all 2-planet pairs within the house
         for i in range(len(planet_names)):
             for j in range(i + 1, len(planet_names)):
                 pair = (planet_names[i], planet_names[j])
-                if pair in conjunction_kb:
-                    analysis.append(conjunction_kb[pair])
+                if pair in self.conjunction_kb:
+                    yoga = self.conjunction_kb[pair]
+                    analysis.append(
+                        f"**{yoga['name']} ({pair[0]}/{pair[1]})**:\n"
+                        f"  • **BPHS**: {yoga['bphs']}\n"
+                        f"  • **Lal Kitab**: {yoga['lk']}"
+                    )
+        
+        if analysis:
+            header = f"**Planetary Yogas/Conjunctions in this House:**\n"
+            return header + "\n\n".join(analysis)
+        elif len(planets_in_house) > 2:
+            return f"**Stellium**: A cluster of {len(planets_in_house)} planets ({', '.join(planet_names)}) is in this house, creating a complex fusion of energies focused on this area of life."
+        else:
+            return ""
 
-        return "\n".join(analysis)
+    def _init_bphs_kb(self):
+        """Initializes the BPHS planet-in-house knowledge base."""
+        self.bphs_kb = {
+            "Sun": {
+                1: "Authoritative, proud, strong-willed, 'Rajasi' nature. Good for status but can cause ego, heat-related health issues (Pitta), or hair loss. Can be self-centered.",
+                2: "Harsh speech, wealth may be gained through government or father but also spent quickly. Can cause family conflicts or issues with eyesight (right eye).",
+                3: "Courageous, strong-willed, good for siblings (especially brothers), and success in performing arts. Makes one a determined leader.",
+                4: "Can be problematic for domestic peace (Sun is a 'Krura' graha). May indicate a dominant mother or issues with property. Good for political connections.",
+                5: "Strong intellect, good for progeny (though may be few). Success in speculation, politics, or teaching. Can indicate a proud or dominant child.",
+                6: "Excellent for destroying enemies and diseases. Gives success in service (especially government). A strong 'Upachaya' placement that grows over time.",
+                7: "Detrimental to marital harmony ('Maraka' house). Can cause ego clashes with spouse. Partner may be authoritative. Good for business status, but delayed marriage.",
+                8: "Can indicate a weak constitution or chronic health issues. Good for inheritance or occult knowledge, but challenges with father. Can give a 'hidden' ego.",
+                9: "Excellent for fortune, dharma, and father. Native is righteous, respected, and may gain from government or long-distance travel. A 'Rajayoga' like placement.",
+                10: "**Dig Bala (Directional Strength)**. The best placement. Excellent for career, status, fame, and recognition from authority. A 'Rajasi' placement, native is ambitious, hard-working, and achieves high position.",
+                11: "Excellent for gains ('Labha'), fulfillment of desires, and connections with influential people. Good for elder siblings. Native achieves their goals.",
+                12: "Can indicate a 'hidden' life, spiritual pursuits, or work in foreign lands/hospitals/prisons. May indicate expenses on account of government or father, or weak eyesight."
+            },
+            "Moon": {
+                1: "Attractive, emotional, changeable, and imaginative. Very sensitive to surroundings. Results depend heavily on Moon's phase (Waxing/Waning) and sign. A full Moon here is a great blessing.",
+                2: "Good for wealth, family, and a soft, persuasive speech. Native has a 'Kutumba' (family-oriented) nature. Wealth may fluctuate.",
+                3: "Good for communication skills, writing, and short journeys. Mind is curious and active. Relationship with siblings can be emotional.",
+                4: "**Dig Bala (Directional Strength)**. Excellent for mother, home, property, and vehicles. Grants a happy, nurturing domestic life and public popularity. Deeply attached to mother/homeland.",
+                5: "Highly intelligent, romantic, creative, and nurturing towards children. Good for education and speculation. Mind is focused on 'Punya' (merits).",
+                6: "A challenging placement ('Dusthana'). Can cause anxiety, mental worries, health issues (especially fluid-related), and conflicts. Mother may be sickly or a source of trouble.",
+                7: "Strong focus on relationships. Native is romantic, sociable, and desires partnership. Partner may be attractive and emotional. Good for public life, but mind is focused on others.",
+                8: "Challenging for mental peace. Can give 'Balarishta' (infant mortality) if afflicted. Prone to anxiety, hidden fears, or chronic illness. Good for occult research/intuition.",
+                9: "Fortunate, righteous ('dharmic'), and devoted to father/guru. Good for higher education and long-distance travel. Mother is a source of fortune.",
+                10: "Success in career, especially related to the public, liquids, or nurturing professions (e.g., HR, healthcare, food). Prone to fluctuations in career status.",
+                11: "Excellent for gains ('Labha') and fulfillment of desires. Good for elder siblings and social networks. Native easily achieves their goals.",
+                12: "Gives a highly imaginative, intuitive, and compassionate mind. Inclined towards spirituality, charity, and 'Moksha' (liberation). Can also indicate emotional losses or isolation."
+            },
+            "Mars": {
+                1: "High energy, courageous, independent, but also impulsive, aggressive, and headstrong. Potential for accidents or head injuries. Forms **Ruchaka Yoga** if in Aries, Scorpio, or Capricorn. **Manglik Dosha**.",
+                2: "Harsh or argumentative speech. Can cause conflicts within the family, especially over wealth. Good for earning money through assertive action. Can be **Manglik** (South Indian view).",
+                3: "Excellent placement. Makes the native extremely courageous ('Parakrami'), a go-getter, and protective of siblings. Good for engineering, sports, or hands-on skills.",
+                4: "Creates **Manglik Dosha**. Problematic for domestic peace; 'burns' the happiness of the house. Can cause conflicts with mother or issues with property/vehicles.",
+                5: "Sharp intellect, good for logic and strategy. Can be 'Putra Dosha' (affliction to children), causing delays or difficult relationships. Risk-taking in speculation.",
+                6: "Excellent for destroying enemies and competitors ('Shatru Nasha'). Gives strong fighting spirit and success in service or litigation. An 'Upachaya' placement that improves with time.",
+                7: "Creates **Manglik Dosha**. Can cause conflicts, arguments, or separation in marriage/partnerships. Indicates a passionate, driven, or aggressive partner. Good for business drive.",
+                8: "Creates **Manglik Dosha**. Challenging for longevity ('Ayu'). Prone to sudden events, accidents, or surgery. Good for occult research, inheritance, but difficult marital life.",
+                9: "Gives an action-oriented approach to dharma. Can be argumentative with father or gurus, but is dutiful. Good for fortune through enterprise.",
+                10: "**Dig Bala (Directional Strength)**. Confers immense energy and ambition in career. Creates a powerful 'Karmayogi'. Excellent for leadership, engineering, military, or surgery. Forms **Ruchaka Yoga** if strong.",
+                11: "Excellent for gains ('Labha'). Native achieves desires through drive and action. Good for gains from friends, elder siblings, or property. An 'Upachaya' placement.",
+                12: "Creates **Manglik Dosha**. Can lead to high expenses, hidden enemies, or hospitalization. Good for spiritual pursuits (Kundalini Yoga) but can give frustrated desires."
+            },
+            "Mercury": {
+                1: "**Dig Bala (Directional Strength)**. Bestows high intelligence, wit, eloquence, humor, and a youthful appearance. Good in mathematics, calculations, writing, and astrology. Can be nervous or overly analytical.",
+                2: "Excellent for wealth through commerce, trade, or speech (e.g., finance, public speaking). Native is intelligent in family matters and has a pleasant, witty speech.",
+                3: "Good for writing, communication, media, and marketing. Mind is curious and skilled. Good relations with siblings, but can be mentally restless.",
+                4: "Good for education, happiness from mother, and analytical mind in domestic affairs. May deal in property, writing, or teaching.",
+                5: "Bestows high 'Buddhi' (intelligence), good for education ('Vidya'), mantras, advisory roles, and speculation. Native is a quick learner and a good counselor.",
+                6: "Sharp, analytical, and critical mind. Excellent for winning arguments, litigation, and service (especially in accounting, medicine, or law). An 'Upachaya' placement. Can cause nervous health issues.",
+                7: "Gives an intelligent, communicative, and youthful partner. Good for business partnerships and trade. Native is diplomatic and skilled in relationships.",
+                8: "Good for research, occult, and inheritance. Mind is drawn to mysteries. Can indicate speech issues or nervous system problems. Longevity may be average.",
+                9: "Intelligent in matters of philosophy, law, and higher education. Good for publishing or teaching. Native is logical about dharma and respects gurus.",
+                10: "Excellent for career ('Karma'). Success in commerce, business, writing, teaching, or public speaking. Native is intelligent, adaptable, and skillful in their profession. An 'Upachaya' placement.",
+                11: "Excellent for gains ('Labha') through friends, social networks, and intellectual pursuits (e.g., trading, writing). Fulfills desires easily. An 'Upachaya' placement.",
+                12: "Good for research, spirituality, and work in foreign lands or isolated places (hospitals, ashrams). Can indicate hidden expenses or losses through poor judgment."
+            },
+            "Jupiter": {
+                1: "**Dig Bala (Directional Strength)**. Highly auspicious. Grants wisdom, honor, respect, and a noble, philosophical, and benevolent personality. Protects health. ('Hamsa Yoga' if strong).",
+                2: "Excellent for wealth ('Dhana') and family ('Kutumba'). Gives truthful, wise speech ('Vak Siddhi'). Native is learned and gains easily from family. Protects finances.",
+                3: "Gives wisdom and courage, but can make one 'dharmic' in a house of 'kama' (desire), leading to mixed results. May be generous to siblings, but efforts are for others.",
+                4: "Excellent for happiness ('Sukha'), mother, education, property, and vehicles ('Vaahan Sukha'). Gives a large home and a pious mother. ('Hamsa Yoga' if strong).",
+                5: "Excellent for 'Purva Punya' (past life merits). Grants intelligent, dutiful children ('Putra'), wisdom, and success in education, finance, or advisory roles. ('Hamsa Yoga' if strong).",
+                6: "Challenging. Can expand debts, diseases, or enemies. However, it also protects from them in the long run. Good for service in law or medicine. 'Upachaya' placement.",
+                7: "Very auspicious for marriage. Grants a wise, noble, and fortunate spouse. Success in partnerships. Good for diplomacy and public life. ('Hamsa Yoga' if strong).",
+                8: "Challenging for wealth but excellent for longevity ('Ayu'). Gives deep interest in occult, spirituality, and research. Potential for unearned wealth (inheritance).",
+                9: "Extremely fortunate. 'Karaka' in its own 'Bhava'. Strong 'Bhagya' (luck). Native is righteous ('dharmic'), philosophical, devoted to father and guru. Blessed with higher knowledge.",
+                10: "Excellent for a righteous and respected career. Success in law, finance, teaching, or as an advisor. May not give extreme ambition but gives status and integrity. ('Hamsa Yoga' if strong).",
+                11: "Excellent for gains ('Labha'). 'Karaka' in its own 'Bhava'. Abundant wealth from multiple sources, support from elder siblings and powerful friends.",
+                12: "The 'Moksha-karaka' in the 'Moksha' house. Excellent for spiritual liberation, meditation, and charity. Protects from harm, but can increase expenses."
+            },
+            "Venus": {
+                1: "Grants beauty, charm, and an attractive personality. Native is artistic, romantic, and loves luxury. Good for health and longevity. ('Malavya Yoga' if strong).",
+                2: "Excellent for wealth, beautiful speech, and a loving family. Native enjoys good food and luxuries. Gains from arts, beauty, or finance.",
+                3: "Gives artistic talents (singing, writing), but can make one pleasure-seeking. Good relations with siblings (especially sisters). Mind is romantic and creative.",
+                4: "**Dig Bala (Directional Strength)**. Excellent for domestic happiness, vehicles, property, and mother. Native enjoys a beautiful home, luxuries, and comforts. ('Malavya Yoga' if strong).",
+                5: "Highly romantic, creative, and artistic. Good for progeny (especially daughters) and intelligence. Success in arts, media, or entertainment. Good 'Purva Punya'.",
+                6: "Challenging. Can cause health issues (reproductive), debts due to luxuries, or conflicts with women. Native may be in service related to arts or finance. 'Upachaya' placement.",
+                7: "Very strong for marriage and partnerships. Gives a beautiful, charming, and artistic spouse. Strong passion and social success. ('Malavya Yoga' if strong).",
+                8: "Gives unearned wealth (inheritance, lottery) but can cause health issues (reproductive). Interest in occult. Can indicate secret relationships or complex marital life.",
+                9: "Good for fortune, especially through marriage or women. Native is devoted, loves philosophy/art, and may have a beautiful spouse from a good family.",
+                10: "Career in arts, fashion, beauty, luxury goods, or entertainment. Native has a charming public image and good social skills. ('Malavya Yoga' if strong).",
+                11: "Excellent for gains ('Labha') through friends (especially female), arts, and social networks. Native fulfills desires for luxury and comfort easily.",
+                12: "Exalted placement (Pisces). Excellent for 'Moksha' (liberation), bed pleasures, and enjoyment of high-end luxuries. Can also indicate high expenses or secret affairs."
+            },
+            "Saturn": {
+                1: "Gives a serious, disciplined, and mature personality. Can cause delays, pessimism, or health issues in childhood. Makes one hardworking and responsible. ('Sasa Yoga' if strong).",
+                2: "Can restrict wealth and family life, causing delays in earning or a detached family. Promotes saving. Speech may be slow, serious, or harsh.",
+                3: "Makes one hardworking, cautious, and determined. 'Upachaya' placement that improves with time. Good for longevity of siblings, but relationship may be cold.",
+                4: "Problematic for domestic happiness ('Sukha') and mother. Can cause delays in acquiring property or a feeling of restriction at home. ('Sasa Yoga' if strong).",
+                5: "Can delay or deny progeny. Causes breaks or difficulties in education. Mind is serious, practical, and philosophical. Good for technical skills or ancient knowledge.",
+                6: "Excellent 'Upachaya' placement. Destroys enemies and diseases ('Shatru Nasha'). Gives success in service, law, or politics. Native is a tireless worker.",
+                7: "**Dig Bala (Directional Strength)**. Gives a serious, mature, and practical partner. Can delay marriage but makes it stable. Good for business and public dealings. ('Sasa Yoga' if strong).",
+                8: "**Ayu-karaka** in the house of longevity. Grants a very long life. Can also indicate chronic illness, obstacles, and delays in inheritance. Gives deep research abilities.",
+                9: "Can cause a different or unconventional approach to dharma and father. Native may question tradition. Fortune ('Bhagya') comes late, through hard work and perseverance.",
+                10: "Strong for career, but success comes through discipline, hard work, and perseverance ('Shani-vat Karma'). Can indicate service-oriented roles or leadership over masses. ('Sasa Yoga' if strong).",
+                11: "Excellent 'Upachaya' placement for gains ('Labha'). Gives large, stable income, especially later in life. Gains from iron, oil, or service. Support from elder siblings.",
+                12: "Can cause isolation, expenses, or losses. Good for spiritual pursuits, meditation, and 'Moksha'. May indicate work in foreign lands, hospitals, or ashrams."
+            },
+            "Rahu": {
+                1: "Unconventional, ambitious, and obsessive personality. Can give fame or infamy. Native may be confused about their life path. Prone to illusions or 'head' related issues.",
+                2: "Sudden or unconventional gains in wealth (e.g., speculation, technology). Can also cause sudden losses. May indicate harsh speech or an unconventional family.",
+                3: "Makes the native extremely courageous, adventurous, and good with technology or media. An 'Upachaya' placement that gives strong results. May have difficult relations with siblings.",
+                4: "Disturbs domestic peace and mother's health. Native may live far from their homeland (foreign settlement). Dissatisfaction with home/property.",
+                5: "Unconventional intellect, good for technology or speculation. Can cause issues with progeny (delays, adoption, or unusual children). Breaks in education.",
+                6: "Excellent 'Upachaya' placement. Destroys all enemies and obstacles. Gives success in service, especially dealing with foreigners or technology. Can give unusual health issues.",
+                7: "Unconventional marriage or partner (e.g., foreign, different caste/religion, large age gap). Creates high, often unrealistic, desires in relationships. Good for business.",
+                8: "Gives sudden, unexpected events (good or bad). Interest in occult, research, or secrets. Can give chronic, hard-to-diagnose illnesses. Potential for sudden inheritance.",
+                9: "Unorthodox beliefs. May challenge father or guru. Fortune comes through unconventional means or foreign lands. Can indicate 'Pitra Dosha'.",
+                10: "Gives great ambition and a dramatic rise in career, often through unconventional means, technology, politics, or foreign connections. Can also cause sudden downfall. 'Upachaya' placement.",
+                11: "Excellent 'Upachaya' placement. Immense gains ('Labha') from multiple, often unconventional, sources. Powerful social network and fulfillment of desires.",
+                12: "Indicates foreign connections, large hidden expenses, or a powerful (but difficult) drive for spiritual liberation ('Moksha'). Can cause sleep issues or hospitalization."
+            },
+            "Ketu": {
+                1: "Intuitive, detached, and introverted personality. Can be self-critical or confused about identity. Gives a spiritual inclination. Potential for 'Gandan-moola' dosha.",
+                2: "Detachment from family wealth. Speech may be sharp, critical, or mystical. Can cause sudden financial losses. Good for research.",
+                3: "Lacks courage or has sudden, headless bursts of it. Can indicate breaks in communication or difficult relations with siblings. Good for technical skills.",
+                4: "Detachment from home/mother. May feel like an outsider in their own family. Good for spiritual life at home, but bad for conventional happiness.",
+                5: "Spiritual or intuitive children. Can cause breaks in education or difficulty with progeny. Strong intuition and knowledge of past lives. Good for research/analysis.",
+                6: "Excellent 'Upachaya' placement. Destroys enemies subtly. Gives strong healing or intuitive diagnostic abilities. Can indicate hard-to-diagnose health issues.",
+                7: "Dissatisfaction or detachment from spouse/marriage. Partner may be spiritual or critical. Can indicate breaks in partnership or a spiritual (non-physical) connection.",
+                8: "Gives deep intuitive and occult abilities. Interest in research, secrets, and past lives. Can indicate a sudden, mystical death or experience. Good for inheritance.",
+                9: "Deep spiritual and philosophical insights. May be critical of traditional gurus. Can indicate strong 'Pitra Punya' (ancestral merits). Good for research in philosophy.",
+                10: "Dissatisfaction in career. Native feels 'headless' about their path. Frequent changes or a career in research, IT, or spiritual fields. An 'Upachaya' placement.",
+                11: "Gains come suddenly or are suddenly cut off. Good for gains from spiritual or occult sources. An 'Upachaya' placement that gives good results over time.",
+                12: "**Moksha-karaka** in the 'Moksha' house. Strongest placement for spiritual liberation, deep meditation, and detachment. Protects from hidden enemies."
+            }
+        }
+
+    def _init_lk_kb(self):
+        """Initializes the Lal Kitab planet-in-house knowledge base."""
+        self.lk_kb = {
+            "Sun": {
+                1: "H1 ('Takht' - Throne) is Sun's 'Pakka Ghar' (Fixed House). 'Rajyog', high status, ego. Good if 'nek' (aspected by Jupiter).",
+                2: "Good for wealth, but bad for relatives related to Venus (wife's family, H7) and Saturn (in-laws, H8).",
+                3: "Good for courage/siblings (Mars's house). Gives self-made wealth. Helps progeny (5th aspect).",
+                4: "Dries up emotional happiness (Moon's house). Can be bad for mother's health. 'Manda' (bad) results.",
+                5: "Excellent for progeny ('aulad') and intelligence (Jupiter's house). 'Rajyog' results, gives fame.",
+                6: "Destroys enemies. Good for government service. But can harm maternal relatives (Ketu's house).",
+                7: "Debilitated ('Neecha'). Very bad for marriage/spouse (Venus's house). Causes 'Andha Kundli' (Blind Chart) if H1 is empty. Spouse may be sickly.",
+                8: "'King of Hell'. Hidden authority, but problematic for family. Can give government troubles. Short-tempered.",
+                9: "Good for fortune, ancestral property (Jupiter's house). Father may be strict or native benefits from ancestors.",
+                10: "Excellent for career/status, 'Sarkari' favor (Saturn's house). Gives high position. Father is a source of career help.",
+                11: "Fulfills all desires, great gains. (Saturn/Jupiter influence). Native is head of family.",
+                12: "Good for spirituality, but gives sleeplessness, hidden enemies, and government expenses. Needs remedies to avoid 'Andha Kundli'."
+            },
+            "Moon": {
+                1: "Emotional, royal, good for mother/education. Can be fickle-minded. 'Manda' (bad) if afflicted.",
+                2: "Excellent for family wealth, liquid cash ('khazana'). Mother is wealthy. Good, soft speech.",
+                3: "Good communication, supports siblings (Mars's house). Mother may have to travel.",
+                4: "'Pakka Ghar' (Permanent House). 'King', 'Amrit' (Nectar), great wealth, peace, long life for mother. Foundation of the chart.",
+                5: "Good for progeny/education, but wavering mind in studies. Good for public speculation.",
+                6: "'Zeher' (Poisoned milk). Bad for health, mother. Mental stress. 'Murda Graha' (dead planet). Harms education.",
+                7: "Good partnership, business of liquids/travel. Spouse is nurturing. Mother and spouse may conflict.",
+                8: "Debilitated ('Neecha'). 'Maut ka paani' (Water of death). Very bad for mother's health, mental peace, education. Life can be difficult.",
+                9: "Pious, good for fortune/travel (Jupiter's house). Mother is 'Dharmik'.",
+                10: "Fluctuating career, public dealing. Results depend heavily on Saturn's position (Saturn's house).",
+                11: "Good for gains, but can be mentally restless. Gains from mother or liquids.",
+                12: "Good for intuition, spirituality, but emotional loss. Bad for 'khazana' (savings). Can cause mental worries."
+            },
+            "Mars": {
+                1: "'Mangal Bad' (Bad), aggressive, headstrong. Can affect health. Needs remedies (e.g., honey).",
+                2: "Harsh speech, family conflicts, wealth issues. But good for gains from in-laws (aspects H8).",
+                3: "'Pakka Ghar' (Permanent House). 'Sher' (Lion), very courageous, protects siblings. Good for wealth. Mars is 'Nek' (Good) here.",
+                4: "'Mangal Bad'. 'Burns' domestic peace. Bad for mother. Creates 'dead' Moon. Needs remedies (e.g., feeding monkeys).",
+                5: "Good intellect, but can harm progeny ('aulad'). 'Tapasvi' (ascetic) nature. Hot-tempered.",
+                6: "Destroys enemies/debts. Good for service. 'Rin Mukti' (debt-free).",
+                7: "'Manglik'. Bad for spouse, passionate, dominant. Can give multiple partners if afflicted.",
+                8: "'Pakka Ghar' (Permanent House). 'Mangal Bad'. 'Maut ka Saath' (accompanies death). Sudden events, accidents, inheritance issues.",
+                9: "Good for fortune, active in dharma. Often has a 'big brother' role in the family.",
+                10: "Exalted ('Uchcha'). 'Karmayogi', excellent career, high status, powerful. 'Nek' (Good).",
+                11: "Good for gains, brave friends. A 'daring' money-earner.",
+                12: "'Manglik'. Good for spirituality, 'Mangal Bad' if alone. Can cause high expenses or imprisonment."
+            },
+            "Mercury": {
+                1: "Intelligent, witty, youthful. 'Rajyog' if alone, but 'Manda' (bad) if with malefics.",
+                2: "Good for wealth through trade, clever speech. 'Dhan-vaan' (wealthy).",
+                3: "Good communication, clever siblings. Can be a good writer/agent.",
+                4: "Good education, benefits from mother's family. Good for 'Sukha' (happiness).",
+                5: "Highly intelligent, good advisor. 'Sultani Kalam' (Pen of a King). Good for speculation.",
+                6: "Exalted ('Uchcha'). Sharp intellect, destroys enemies, but bad for maternal relatives ('nankaa ghar'). 'Murda Graha' (dead planet).",
+                7: "'Pakka Ghar' (Permanent House). 'Rajyog', good spouse, business partner. Good for trade.",
+                8: "'Mandi halat' (Bad), health issues (skin/nerves), losses, mental stress.",
+                9: "Good for fortune, communication with gurus. Can be a good publisher/preacher.",
+                10: "Career in trade, writing, accounting. Good for business. Results depend on Saturn.",
+                11: "Gains through intellect/friends. Very clever in financial matters.",
+                12: "Debilitated ('Neecha'). 'Manda' (Bad). Bad for speech, mental peace, 'Andha Kundli' (Blind Chart). Needs remedies (e.g., piercing nose)."
+            },
+            "Jupiter": {
+                1: "Wise, respected, 'Rajyog', good health. 'Brahma's Leekh' (Writing of Brahma).",
+                2: "Wealthy, good speech, benefits from family. 'Khazana' (Treasure) of ancestors.",
+                3: "Wise, but wastes energy on others. Not considered strong.",
+                4: "Exalted ('Uchcha'). Supreme happiness, property, vehicles. 'Dev Guru' blessings.",
+                5: "'Pakka Ghar' (Permanent House - by some). 'Rajyog', wise children, great 'Punya'.",
+                6: "Good for service, but creates hidden enemies. Bad for 'Pitra Rin' (debt to father).",
+                7: "Wise spouse, good partnerships, 'Rajyog'. Respect in society.",
+                8: "Good for longevity, inheritance, but 'dead snake'. Can give hidden knowledge.",
+                9: "'Pakka Ghar' (Permanent House). 'Rajyog', foundation of chart, great fortune, ancestral blessings.",
+                10: "Debilitated ('Neecha'). 'Manda' (Bad). Career struggles, bad for father's status. Needs remedies (e.g., serving priests).",
+                11: "Great gains, fulfills all desires. 'Dhan' (wealth) guaranteed.",
+                12: "Good for spirituality, 'Moksha'. 'Saintly' nature. Protects from harm."
+            },
+            "Venus": {
+                1: "Charming, attractive, loves luxuries. 'Ishq-baaz' (romantic).",
+                2: "'Khazana' (Treasure), wealthy, sweet speech. Good for family wealth.",
+                3: "Good for arts, but can be pleasure-seeking. May have affairs.",
+                4: "Good for vehicles, home comforts. 'Rajyog' if aspected by Jupiter.",
+                5: "Romantic, artistic, good for children (especially daughters).",
+                6: "Debilitated ('Neecha'). 'Manda' (Bad). Bad for spouse, health issues. Needs remedies (e.g., donate 'ghee').",
+                7: "'Pakka Ghar' (Permanent House). 'Rajyog', beautiful/wealthy spouse. Good for business.",
+                8: "'Mandi halat' (Bad). Spouse may suffer. Can cause secret affairs.",
+                9: "Good for fortune, spouse brings luck. Can make one religious.",
+                10: "Career in arts, fashion, luxury goods, or entertainment.",
+                11: "Good for gains, friends with women. Enjoys life.",
+                12: "Exalted ('Uchcha'). High-end luxury, comforts, spirituality. 'Rajyog'. Good for 'Moksha'."
+            },
+            "Saturn": {
+                1: "'Surye ko grahan' (Eclipses Sun - H1 is Sun's house). Hardworking, serious. Can delay self-progress.",
+                2: "Good for saved wealth (money in 'sandook'), but family feels distant. Speech can be harsh.",
+                3: "Courageous, but issues with siblings. 'Loha' (Iron) hands - strong actions.",
+                4: "Bad for mother/home peace ('zehreeli hawa' - poisoned air). Can cause property disputes.",
+                5: "Delays in progeny/education. 'Saanp ko doodh pilana' (feeding milk to a snake) - efforts may backfire.",
+                6: "Destroys enemies/debts. Good for service, especially in industry.",
+                7: "Exalted ('Uchcha'). Good for wealth, business, but delays/dries marriage. 'Manda' for spouse.",
+                8: "Long life, but chronic issues. 'Maut ka Kuwa' (Well of death).",
+                9: "Skeptical of tradition, but builds own fortune. Can be bad for father.",
+                10: "'Pakka Ghar' (Permanent House). 'Rajyog', great career, public leader. 'Karmayogi'.",
+                11: "Good for gains, but can be greedy. 'Sone ki khaan' (Gold mine) - gains from 'iron' (industry).",
+                12: "Good for spirituality/foreign lands, but can cause isolation. 'Makaan banaya, kismet soyi' (House built, destiny slept)."
+            },
+            "Rahu": {
+                1: "'Shahi Takht' (Royal Throne), very ambitious, can be selfish. 'Dimagi pareshani' (mental worries).",
+                2: "Wealth from unconventional sources (speculation, foreign), but family issues. Can be a 'Chor' (thief).",
+                3: "Brave, good with tech/media. 'Talwar' (Sword). Overpowers Mars's house.",
+                4: "Spoils domestic peace ('Dil ka Kanta' - thorn in the heart). Bad for mother. Foreign settlement.",
+                5: "Unconventional intellect, issues with progeny ('aulad'). Breaks in education.",
+                6: "Destroys all enemies/obstacles. 'Rajyog' results. Good for service.",
+                7: "Unconventional partner/marriage (foreign, different religion, etc.). Can cause affairs.",
+                8: "Sudden events, chronic illness, occult interest. 'Pareshani' (Trouble).",
+                9: "Unorthodox beliefs, challenges father/guru. 'Pitra Rin' (Ancestral debt).",
+                10: "Sudden rise in career (politics, tech). Can also cause sudden downfall. 'Dhua' (smoke) over Saturn's house.",
+                11: "Immense gains, powerful network. Fulfills all desires.",
+                12: "'Pakka Ghar' (Permanent House). 'Patal Lok' (Underworld), good for spirituality, foreign travel, but mental unrest, sleeplessness."
+            },
+            "Ketu": {
+                1: "Intuitive, detached, 'Dharmik', can be self-critical. 'Ganesh' (Lord Ganesha).",
+                2: "Detached from family wealth. Speech may be sharp or mystical. 'Gadda Dhan' (hidden treasure).",
+                3: "Lacks courage or has sudden bursts of it. Can indicate breaks in communication.",
+                4: "Detached from home/mother. Feels like an 'outsider' in the family.",
+                5: "'Aulad' (son), spiritual children. 'Guru ka chela' (Disciple of Guru). Good for intuition.",
+                6: "'Pakka Ghar' (Permanent House). Good for health, destroys enemies. 'Kutte ki seva' (Serve dogs) is the best remedy.",
+                7: "Detached from spouse, spiritual partner. Can indicate breaks in partnership.",
+                8: "Exalted ('Uchcha'). Deep occult knowledge, inheritance. 'Ganesh's protection'.",
+                9: "Exalted ('Uchcha'). 'Dharmik', pilgrimage, 'Rajyog'. Blessings of 'Dada' (grandfather).",
+                10: "Dissatisfaction in career. 'Dhvaja' (Flag) on Saturn's house. Career in research, IT, or spiritual fields.",
+                11: "Gains are cut or come from spiritual sources. 'Rajyog' for progeny.",
+                12: "'Moksha Sthan'. 'Moksha-karaka', spiritual liberation. 'Kutte ki seva' (Serve dogs) gives great results."
+            }
+        }
+
+
+    def _init_conjunction_kb(self):
+        """Initializes the BPHS/Lal Kitab conjunction knowledge base."""
+        self.conjunction_kb = {
+            ('Mercury', 'Sun'): {
+                "name": "Budhaditya Yoga",
+                "bphs": "A yoga for high intelligence, skill, and reputation. (Check combustion).",
+                "lk": "A 'Raj Yoga' in many houses (e.g., 1, 4, 5, 11). Mercury's results are tied to the Sun."
+            },
+            ('Moon', 'Sun'): {
+                "name": "Amavasya Yoga",
+                "bphs": "Occurs near the New Moon. The mind (Moon) is weak and overpowered by the Sun's ego. Can give a focused, but potentially strained, personality.",
+                "lk": "Sun and Moon together are generally good, but the Moon (mind, mother) suffers. Sun's results are amplified."
+            },
+            ('Moon', 'Mars'): {
+                "name": "Chandra-Mangala Yoga (Lakshmi Yoga)",
+                "bphs": "A powerful yoga for wealth, but can make the person impulsive, quick-tempered, and emotionally volatile. Wealth may come from 'Mars' (property) or 'Moon' (public) sources.",
+                "lk": "Excellent for wealth ('Lakshmi Yoga'). Mars (brother) supports the Moon (wealth/mother). Can give a hot temper but financially very strong."
+            },
+            ('Jupiter', 'Moon'): {
+                "name": "Gaja-Kesari Yoga",
+                "bphs": "If in a Kendra from each other, it's a powerful Rajyoga. Even as a conjunction, it's highly auspicious. Blesses the mind (Moon) with wisdom (Jupiter). Grants fame, virtue, and intelligence.",
+                "lk": "Extremely auspicious ('Sona+Chandi' - Gold+Silver). Blesses the native with wealth, wisdom, and honor."
+            },
+            ('Moon', 'Saturn'): {
+                "name": "Vish Yoga (Poison Yoga) / Punarphoo",
+                "bphs": "A challenging yoga causing melancholy, pessimism, delays, and a difficult relationship with the mother. The mind (Moon) is afflicted by Saturn's (sorrow) energy.",
+                "lk": "'Zeher' (Poison) Yoga. Very malefic for mental peace, mother's health, and liquid wealth (Moon). Requires remedies (e.g., offering milk to Shivling)."
+            },
+             ('Jupiter', 'Rahu'): {
+                "name": "Guru-Chandal Dosha",
+                "bphs": "Jupiter's wisdom is 'polluted' by Rahu's unorthodox desires. Can lead to flawed judgment, disrespect for tradition, or using wisdom for selfish ends.",
+                "lk": "'Hathi Be-Mahavat' (Elephant without a driver). Rahu overpowers Jupiter. Generally gives bad results for the house they occupy."
+            },
+             ('Moon', 'Rahu'): {
+                "name": "Grahan Dosha (Eclipse)",
+                "bphs": "Causes deep emotional instability, phobias, and a turbulent mind. The mind (Moon) is 'eclipsed' by Rahu's illusion (Maya).",
+                "lk": "'Grahan' (Eclipse). Very bad for mother's health and mental peace. Can cause 'Pitra Rin' (ancestral debt). Remedies (e.g., floating barley/milk) are essential."
+            },
+             ('Sun', 'Rahu'): {
+                "name": "Grahan Dosha (Eclipse)",
+                "bphs": "Weakens the 'Atma' (soul), self-confidence, and father. Can cause issues with authority, government, and health (heart, eyes).",
+                "lk": "'Grahan' (Eclipse). Very bad for father, reputation, and government favors. Remedies (e.g., floating coal/wheat) are essential."
+            },
+            ('Mars', 'Saturn'): {
+                "name": "Sangharsh Yoga (Struggle)",
+                "bphs": "Two strong, opposing malefics create immense tension. Can give engineering skill or surgical ability, but also frustration, accidents, and conflict.",
+                "lk": "Highly malefic. 'Manda Mangal' (Bad Mars). Can lead to accidents, debts, and severe struggles. Requires immediate remedies for both planets."
+            },
+            ('Jupiter', 'Ketu'): {
+                "name": "Guru-Ketu Yoga",
+                "bphs": "Gives deep spiritual insight, intuitive knowledge, and interest in occult/philosophy. Can also cause dissatisfaction with gurus or breaks in formal education.",
+                "lk": "Ketu ('son') with Jupiter ('grandfather'). Can give good spiritual/ancestral results, but may harm progeny if afflicted. Ketu acts as Jupiter's agent."
+            },
+            ('Moon', 'Ketu'): {
+                "name": "Grahan Dosha (Eclipse)",
+                "bphs": "Creates mental detachment, confusion, or a feeling of emotional isolation. Can give strong intuition but a weak, wavering mind.",
+                "lk": "'Grahan' (Eclipse). Bad for mother and progeny ('aulad'). Can cause mental confusion. Remedies: Feed dogs (Ketu), wear gold (Jupiter's help)."
+            },
+            ('Sun', 'Ketu'): {
+                "name": "Grahan Dosha (Eclipse)",
+                "bphs": "Weakens the Sun (father, status, soul) but can give strong spiritual/intuitive insights. May cause separation from father or lack of recognition.",
+                "lk": "'Grahan' (Eclipse). Bad for father and progeny (son). Can cause health issues. Remedies: Feed monkeys (Sun), help son/nephew (Ketu)."
+            }
+        }
 
 #===================================================================================================
 # ASTRONOMICAL & VARGA CALCULATORS
@@ -1189,66 +1550,96 @@ class AstronomicalCalculator:
     def calculate_planet_positions(self, dt_local: datetime, lat: float, lon: float, timezone_offset: float) -> Optional[Dict[str, Dict[str, Any]]]:
         """
         Calculates the Sidereal (Lahiri) positions for all planets and the Ascendant.
+        
+        This function is rectified to:
+        1. Set the global Sidereal mode (Lahiri) for the Ascendant.
+        2. Correctly convert local time to UTC.
+        3. Use the True Node for Rahu/Ketu.
 
         Args:
-            dt_local (datetime): The user's local birth date and time.
+            dt_local (datetime): The user's local birth date and time (assumed naive).
             lat (float): Latitude of the birth location.
             lon (float): Longitude of the birth location.
-            timezone_offset (float): The UTC offset (e.g., 5.5 for India).
+            timezone_offset (float): The UTC offset as a float (e.g., 5.5 for India, -5.0 for EST).
 
         Returns:
-            Optional[Dict[str, Dict[str, Any]]]: A dictionary where keys are
-            planet names ("Sun", "Moon", etc.) and values are dictionaries
-            of their positional data. Returns None if calculation fails.
+            Optional[Dict[str, Dict[str, Any]]]: 
+                A dictionary where keys are planet names ("Sun", "Moon", "Ascendant", etc.)
+                and values are dictionaries of their positional data (rashi, longitude, etc.).
+                Returns None if a calculation error occurs.
         """
+        
+        # --- Step 1: Check for Dependency ---
         if not SWISSEPH_AVAILABLE:
             messagebox.showerror("Dependency Missing", "The 'pyswisseph' library is required for accurate calculations.")
             return None
+            
         try:
-            # 1. Convert local time to UTC, which is required by swisseph
-            dt_utc = dt_local - timedelta(hours=timezone_offset)
+            # --- Step 1: Set Global Ephemeris Mode (CRITICAL) ---
+            # This is still required so swe.get_ayanamsa() knows
+            # *which* ayanamsa to return (i.e., Lahiri).
+            swe.set_sid_mode(swe.SIDM_LAHIRI)
 
-            # 2. Convert UTC datetime to Julian Day number
-            #    The '1' means Gregorian calendar.
-            jd_utc = swe.utc_to_jd(dt_utc.year, dt_utc.month, dt_utc.day, dt_utc.hour, dt_utc.minute, dt_utc.second, 1)[1]
+            # --- Step 2: Robust Timezone Conversion ---
+            tz_info = timezone(timedelta(hours=timezone_offset))
+            dt_aware = dt_local.replace(tzinfo=tz_info)
+            dt_utc = dt_aware.astimezone(timezone.utc)
 
-            # 3. Define the planets we need to calculate
+            # --- Step 3: Convert UTC to Julian Day ---
+            jd_utc_tuple = swe.utc_to_jd(
+                dt_utc.year, dt_utc.month, dt_utc.day,
+                dt_utc.hour, dt_utc.minute, dt_utc.second,
+                1  # Gregorian calendar
+            )
+            jd_et = jd_utc_tuple[0]  # Ephemeris Time (for Ayanamsa)
+            jd_utc = jd_utc_tuple[1] # Universal Time (for calculations)
+
+            # --- 4. Get the Ayanamsa Value ---
+            # We get the ayanamsa value to manually correct the ascendant.
+            current_ayanamsa = swe.get_ayanamsa(jd_et)
+            print(f"--- DEBUG: Ayanamsa to be subtracted: {current_ayanamsa:.6f} ---")
+
+            # --- 5. Define Planets (Using True Node) ---
             planet_codes: Dict[str, int] = {
                 "Sun": swe.SUN, "Moon": swe.MOON, "Mercury": swe.MERCURY,
                 "Venus": swe.VENUS, "Mars": swe.MARS, "Jupiter": swe.JUPITER,
-                "Saturn": swe.SATURN, "Rahu": swe.MEAN_NODE, # Rahu is the "Mean Node"
+                "Saturn": swe.SATURN, "Rahu": swe.TRUE_NODE,
             }
             positions: Dict[str, Dict[str, Any]] = {}
 
-            # 4. Calculate the Ascendant (Lagna)
-            #    'b'P'' specifies the Placidus house system (standard for Ascendant).
-            _, ascmc = swe.houses(jd_utc, lat, lon, b'P')
-            asc_longitude = ascmc[0] # The first value returned is the Ascendant
-            positions['Ascendant'] = self._process_longitude(asc_longitude)
-            positions['Ascendant']['speed'] = 0.0 # Ascendant doesn't have speed
+            # --- 6. Calculate the Ascendant (Lagna) ---
+            # swe.houses() ALWAYS returns a TROPICAL longitude.
+            _, ascmc = swe.houses(jd_utc, lat, lon, b'S') # 'S' = Sripathi
+            tropical_asc_longitude = ascmc[0] 
+            
+            # --- FINAL FIX: Manually convert Tropical to Sidereal ---
+            # We subtract the ayanamsa and wrap around 360 degrees.
+            # The ( ... + 360) % 360 handles any negative results.
+            sidereal_asc_longitude = (tropical_asc_longitude - current_ayanamsa + 360) % 360
+            
+            # Now we process the CORRECT sidereal longitude
+            positions['Ascendant'] = self._process_longitude(sidereal_asc_longitude) # <-- FINAL FIX
+            positions['Ascendant']['speed'] = 0.0
 
-            # 5. Calculate positions for all other planets
+            # --- 7. Calculate Positions for all Planets ---
             for name, code in planet_codes.items():
-                # `swe.calc_ut` calculates for a specific Julian Day in UTC.
-                # `swe.FLG_SWIEPH | swe.FLG_SIDEREAL` are flags that tell it
-                # to use high-precision ephemeris and the Sidereal mode we set.
-                planet_pos_data = swe.calc_ut(jd_utc, code, swe.FLG_SWIEPH | swe.FLG_SIDEREAL)[0]
-
+                # swe.calc_ut() CORRECTLY returns Sidereal with this flag
+                planet_pos_data = swe.calc_ut(
+                    jd_utc, code, swe.FLG_SWIEPH | swe.FLG_SIDEREAL
+                )[0]
                 planet_longitude = planet_pos_data[0]
                 planet_speed = planet_pos_data[3]
-
-                # Process the raw longitude into a useful data dictionary
                 positions[name] = self._process_longitude(planet_longitude)
                 positions[name]['speed'] = planet_speed
 
-            # 6. Calculate Ketu (South Node)
-            #    Ketu is always exactly 180 degrees opposite Rahu.
+            # --- 8. Calculate Ketu (South Node) ---
+            # (Assumes 'longitude' is a key in the dict from _process_longitude)
             rahu_longitude = positions['Rahu']['longitude']
-            ketu_longitude = (rahu_longitude + 180) % 360 # % 360 handles wrap-around
+            ketu_longitude = (rahu_longitude + 180) % 360
             positions['Ketu'] = self._process_longitude(ketu_longitude)
-            # Ketu's speed is the same as Rahu's, but in the opposite direction
             positions['Ketu']['speed'] = positions['Rahu'].get('speed', 0) * -1
 
+            # --- 9. Return Final Results ---
             return positions
 
         except swe.Error as e:
@@ -1459,40 +1850,137 @@ class VargaCalculator:
             division_size = 1.25
             amsa = math.floor(lon_in_sign / division_size) # 0-23
             new_lon = (lon_in_sign % division_size) * 24
-            # Odd signs: Start from Leo
-            # Even signs: Start from Cancer
-            start_sign = 5 if EnhancedAstrologicalData.SIGN_NATURE[sign] == 'Odd' else 4
-            new_sign = (start_sign + amsa - 1) % 12 + 1
+            
+            # --- RECTIFICATION: BPHS "Forward/Reverse" Rule ---
+            # This rule, used by JHora, counts forward for odd
+            # signs and in reverse for even signs.
+            
+            if EnhancedAstrologicalData.SIGN_NATURE[sign] == 'Odd':
+                # Odd signs: Start from Leo (5) and count FORWARD
+                start_sign = 5
+                new_sign = (start_sign + amsa - 1) % 12 + 1
+            else:
+                # Even signs: Start from Cancer (4) and count REVERSE
+                start_sign = 4
+                # We use (+ 360) to handle the negative modulo correctly
+                new_sign = (start_sign - amsa - 1 + 360) % 12 + 1
+            
+            # --- END RECTIFICATION ---
+            
             return new_sign, new_lon, ""
 
         elif varga_num == 30: # D30 Trimsamsa (Misfortunes)
-            # This varga has irregular, pre-defined divisions
+            # This varga has irregular divisions.
+            # We are calculating a "proportional longitude" based on
+            # how far the planet is into its specific D1 zone.
+            
+            new_lon: float = 0.0
+            
             if EnhancedAstrologicalData.SIGN_NATURE[sign] == 'Odd':
-                if 0 <= lon_in_sign < 5: new_sign = 1   # Aries (Mars)
-                elif 5 <= lon_in_sign < 10: new_sign = 11 # Aquarius (Saturn)
-                elif 10 <= lon_in_sign < 18: new_sign = 9 # Sagittarius (Jupiter)
-                elif 18 <= lon_in_sign < 25: new_sign = 3 # Gemini (Mercury)
-                else: new_sign = 7 # Libra (Venus)
+                if 0 <= lon_in_sign < 5: 
+                    new_sign = 1  # Aries (Mars)
+                    # Zone: 0-5 (Size=5). Find % into this 5-degree zone.
+                    new_lon = (lon_in_sign / 5.0) * 30
+                
+                elif 5 <= lon_in_sign < 10: 
+                    new_sign = 11 # Aquarius (Saturn)
+                    # Zone: 5-10 (Size=5). Find % into this 5-degree zone.
+                    lon_in_zone = lon_in_sign - 5.0
+                    new_lon = (lon_in_zone / 5.0) * 30
+                
+                elif 10 <= lon_in_sign < 18: 
+                    new_sign = 9  # Sagittarius (Jupiter)
+                    # Zone: 10-18 (Size=8). Find % into this 8-degree zone.
+                    lon_in_zone = lon_in_sign - 10.0
+                    new_lon = (lon_in_zone / 8.0) * 30
+                
+                elif 18 <= lon_in_sign < 25: 
+                    new_sign = 3  # Gemini (Mercury)
+                    # Zone: 18-25 (Size=7). Find % into this 7-degree zone.
+                    lon_in_zone = lon_in_sign - 18.0
+                    new_lon = (lon_in_zone / 7.0) * 30
+                
+                else: # 25 <= lon_in_sign <= 30
+                    new_sign = 7  # Libra (Venus)
+                    # Zone: 25-30 (Size=5). Find % into this 5-degree zone.
+                    lon_in_zone = lon_in_sign - 25.0
+                    new_lon = (lon_in_zone / 5.0) * 30
+
             else: # Even signs
-                if 0 <= lon_in_sign < 5: new_sign = 2 # Taurus (Venus)
-                elif 5 <= lon_in_sign < 12: new_sign = 6 # Virgo (Mercury)
-                elif 12 <= lon_in_sign < 20: new_sign = 12 # Pisces (Jupiter)
-                elif 20 <= lon_in_sign < 25: new_sign = 10 # Capricorn (Saturn)
-                else: new_sign = 8 # Scorpio (Mars)
-            # Longitude in Trimsamsa is symbolic; only the sign matters.
-            return new_sign, 0.0, ""
+                if 0 <= lon_in_sign < 5: 
+                    new_sign = 2  # Taurus (Venus)
+                    # Zone: 0-5 (Size=5).
+                    new_lon = (lon_in_sign / 5.0) * 30
+                
+                elif 5 <= lon_in_sign < 12: 
+                    new_sign = 6  # Virgo (Mercury)
+                    # Zone: 5-12 (Size=7).
+                    lon_in_zone = lon_in_sign - 5.0
+                    new_lon = (lon_in_zone / 7.0) * 30
+                
+                elif 12 <= lon_in_sign < 20: 
+                    new_sign = 12 # Pisces (Jupiter)
+                    # Zone: 12-20 (Size=8).
+                    lon_in_zone = lon_in_sign - 12.0
+                    new_lon = (lon_in_zone / 8.0) * 30
+                
+                elif 20 <= lon_in_sign < 25: 
+                    new_sign = 10 # Capricorn (Saturn)
+                    # Zone: 20-25 (Size=5).
+                    lon_in_zone = lon_in_sign - 20.0
+                    new_lon = (lon_in_zone / 5.0) * 30
+                
+                else: # 25 <= lon_in_sign <= 30
+                    new_sign = 8  # Scorpio (Mars)
+                    # Zone: 25-30 (Size=5).
+                    lon_in_zone = lon_in_sign - 25.0
+                    new_lon = (lon_in_zone / 5.0) * 30
+            
+            # Now we return the new_sign AND the new proportional longitude
+            return new_sign, new_lon, ""
+        
+        elif varga_num == 45: # D45 Akshavedhamsa (Obstacles)
+            division_size = 30 / 45
+            amsa = math.floor(lon_in_sign / division_size)
+            new_lon = (lon_in_sign % division_size) * 45
+            # Odd signs: Counting starts from the sign itself
+            if EnhancedAstrologicalData.SIGN_NATURE[sign] == 'Odd':
+                new_sign = (sign + amsa - 1) % 12 + 1
+            # Even signs: Counting starts from the 5th sign from it
+            else:
+                new_sign = (sign + 4 + amsa - 1) % 12 + 1
+            return new_sign, new_lon, ""
 
         elif varga_num == 60: # D60 Shashtyamsa (Past Karma)
-            # This is a very sensitive chart.
-            # 60 divisions of 0.5° (30') each
-            amsa_index = math.floor(d1_longitude_in_sign * 2) # 0-59
-            if amsa_index >= 60: amsa_index = 59
-            new_lon = (d1_longitude_in_sign * 2 % 1) * 30 # Stretch 0.5° back to 30°
-            # The sign progresses: 1st amsa is in the D1 sign, 2nd is in the next, etc.
-            new_sign = ((sign -1 + amsa_index) % 12) + 1
-            details = self.D60_DEITIES[amsa_index] # Get the deity name
-            return new_sign, new_lon, details
+            # --- RECTIFICATION: JHora's "Odd/Even Start" Rule ---
+            # This rule is proven to match your manually entered chart.
+            
+            division_size = 0.5
+            
+            # Find the amsa index (0-59)
+            amsa_index = math.floor(d1_longitude_in_sign / division_size)
+            if amsa_index >= 60: amsa_index = 59 # Safety clamp
+            
+            # Calculate the new longitude
+            new_lon = (d1_longitude_in_sign % division_size) * 60
 
+            # Determine the D-60 Sign based on the JHora rule
+            start_sign: int
+            if EnhancedAstrologicalData.SIGN_NATURE[sign] == 'Odd':
+                # Odd D-1 signs: Count starts from Aries (Sign 1)
+                start_sign = 1
+            else:
+                # Even D-1 signs: Count starts from Capricorn (Sign 10)
+                start_sign = 10
+                
+            new_sign = ((start_sign - 1 + amsa_index) % 12) + 1
+            
+            # Find the deity (this rule is *always* sequential)
+            # We use the corrected D60_DEITIES list for this.
+            details = self.D60_DEITIES[amsa_index]
+                
+            return new_sign, new_lon, details
+            
         else: # Fallback for other Vargas (e.g., D5, D6, D40, D45)
             # This is a generic "Parashara" rule
             division_size = 30 / varga_num
@@ -2010,194 +2498,235 @@ class AstroVighatiElite:
         """
         messagebox.showinfo("About", about_text)
 
+# --- Helper Class: Spinbox (for the custom UI) ---
+# --- Helper Class: Spinbox (for the custom UI) ---
+import tkinter as tk
+from tkinter import ttk, scrolledtext, font, messagebox
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
+from datetime import datetime, timedelta
+import math
+import textwrap
+
+# --- Make sure these imports are at the TOP of your script ---
+try:
+    from dateutil.relativedelta import relativedelta
+    DATEUTIL_AVAILABLE = True
+except ImportError:
+    DATEUTIL_AVAILABLE = False
+
+try:
+    from skyfield.api import Topos, load
+    from skyfield.almanac import find_discrete, risings_and_settings
+    import pytz
+    import timezonefinder
+    SKYFIELD_AVAILABLE = True
+except ImportError:
+    SKYFIELD_AVAILABLE = False
+    print("⚠️ WARNING: 'skyfield', 'pytz', or 'timezonefinder' not found. Sunrise auto-fill will fail.")
+# --- End Imports ---
+
+class Spinbox(ttk.Frame):
+    """A ttk-themed Spinbox alternative using Entry and Buttons."""
+    def __init__(self, master=None, from_=0, to=100, textvariable=None, width=5, format="%02.0f", wrap=False, **kwargs):
+        super().__init__(master, **kwargs)
+        self.textvariable = textvariable if textvariable else tk.StringVar()
+        self.from_ = from_
+        self.to = to
+        self.format = format
+        self.wrap = wrap
+
+        # Validate initial value
+        try:
+            initial_val = int(self.textvariable.get())
+            clamped_val = max(self.from_, min(self.to, initial_val))
+            if clamped_val != initial_val:
+                 self.textvariable.set(self.format % clamped_val)
+            elif self.textvariable.get() != (self.format % clamped_val):
+                 self.textvariable.set(self.format % clamped_val)
+        except (ValueError, tk.TclError):
+             self.textvariable.set(self.format % self.from_)
+
+        self.entry = ttk.Entry(self, textvariable=self.textvariable, width=width, justify='center')
+        s = ttk.Style()
+        s.configure('Small.TButton', padding=1)
+        self.btn_up = ttk.Button(self, text="▲", width=-1, command=self._increment, style='Small.TButton')
+        self.btn_down = ttk.Button(self, text="▼", width=-1, command=self._decrement, style='Small.TButton')
+
+        self.entry.grid(row=0, column=0, rowspan=2, sticky='nsew')
+        self.btn_up.grid(row=0, column=1, sticky='ns')
+        self.btn_down.grid(row=1, column=1, sticky='ns')
+
+        self.grid_rowconfigure((0, 1), weight=1)
+        self.grid_columnconfigure(0, weight=1)
+
+        self.textvariable.trace_add("write", self._validate)
+        self.entry.bind("<MouseWheel>", self._on_scroll, "+")
+        self.entry.bind("<Button-4>", self._on_scroll, "+")
+        self.entry.bind("<Button-5>", self._on_scroll, "+")
+
+    def _validate(self, *args):
+        try:
+            value_str = self.textvariable.get()
+            if not value_str:
+                 return # Allow user to clear field
+            value = int(value_str)
+            current_formatted = self.format % value
+            if not (self.from_ <= value <= self.to):
+                 clamped = max(self.from_, min(self.to, value))
+                 clamped_formatted = self.format % clamped
+                 if self.textvariable.get() != clamped_formatted:
+                      self.after_idle(lambda: self.textvariable.set(clamped_formatted))
+            # Don't reformat while user is typing
+        except (ValueError, tk.TclError):
+             if value_str != '-': # Allow negative sign temporarily
+                  self.after_idle(lambda: self.textvariable.set(self.format % self.from_))
+
+    def _increment(self):
+        try:
+            value = int(self.textvariable.get())
+            if value < self.to:
+                self.textvariable.set(self.format % (value + 1))
+            elif self.wrap:
+                self.textvariable.set(self.format % self.from_)
+        except (ValueError, tk.TclError):
+            self.textvariable.set(self.format % self.from_)
+
+    def _decrement(self):
+        try:
+            value = int(self.textvariable.get())
+            if value > self.from_:
+                self.textvariable.set(self.format % (value - 1))
+            elif self.wrap:
+                 self.textvariable.set(self.format % self.to)
+        except (ValueError, tk.TclError):
+            self.textvariable.set(self.format % self.from_)
+
+    def _on_scroll(self, event):
+        if event.num == 4 or (hasattr(event, 'delta') and event.delta > 0):
+            self._increment()
+            return "break"
+        elif event.num == 5 or (hasattr(event, 'delta') and event.delta < 0):
+            self._decrement()
+            return "break"
 
 #===================================================================================================
 # TAB 1: KUNDLI GENERATOR (& VARGAS)
 #===================================================================================================
-class KundliGeneratorTab(ttk.Frame):
-    """
-    This class defines the entire "Kundli & Vargas" tab.
 
-    This is the most important tab. It contains:
-    1.  Input fields for all birth data.
-    2.  The "Generate Kundli" button.
-    3.  A results area with multiple sub-tabs for displaying D1 positions,
-        Varga positions, detailed analysis, and Varga meanings.
-    """
+# (This assumes your other imports like EnhancedAstrologicalData and decimal_to_dms
+# are handled in the main app file where this class is used)
 
-    def __init__(self, parent: ttk.Notebook, app: 'AstroVighatiElite') -> None:
-        super().__init__(parent)
+
+class InputPanel(ttk.Frame):
+    """
+    A dedicated class for the left-hand input panel.
+    Handles creation, layout, retrieval, and clearing of all input widgets.
+    """
+    def __init__(self, parent: ttk.Frame, app: 'AstroVighatiElite', generate_command: callable) -> None:
+        super().__init__(parent, padding=10, style="Kundli.TFrame")
         self.app = app
-
-        # This map defines which Vargas are shown in the dropdown.
-        self.varga_map: Dict[str, int] = {
-            "D1 - Rashi": 1, "D2 - Hora": 2, "D3 - Drekkana": 3, "D4 - Chaturthamsa": 4,
-            "D7 - Saptamsa": 7, "D9 - Navamsa": 9, "D10 - Dasamsa": 10, "D12 - Dwadasamsa": 12,
-            "D16 - Shodasamsa": 16, "D20 - Vimsamsa": 20, "D24 - Siddhamsa": 24,
-            "D30 - Trimsamsa": 30, "D60 - Shashtyamsa": 60
-        }
-
-        # This map includes *all* Vargas we want to pre-calculate.
-        self.full_varga_map: Dict[str, int] = self.varga_map.copy()
-        self.full_varga_map.update({
-             "D5 - Panchamsa": 5, "D6 - Shashthamsa": 6,
-             "D40 - Khavedamsa": 40, "D45 - Akshavedamsa": 45
-        })
-
-
-        # --- Main Layout ---
-        # A PanedWindow creates a draggable divider between two frames.
-        # FIX: Removed explicit style='...'
-        main_paned = ttk.PanedWindow(self, orient='horizontal')
-        main_paned.pack(expand=True, fill='both', padx=10, pady=10)
-
-        # Left panel for user inputs.
-        left_panel = ttk.Frame(main_paned, padding=10)
-        main_paned.add(left_panel, weight=1) # weight=1 gives it 1/4 of the space
-
-        # Right panel for displaying results.
-        right_panel = ttk.Frame(main_paned, padding=(10, 10, 0, 10))
-        main_paned.add(right_panel, weight=3) # weight=3 gives it 3/4 of the space
-
-        # Build the UI components for each panel.
-        self.create_input_panel(left_panel)
-        self.create_results_panel(right_panel)
-
-    def create_input_panel(self, parent: ttk.Frame) -> None:
-        """Creates the input form for birth name, date, time, and location."""
-
-        # --- Birth Details Frame ---
-        birth_frame = ttk.LabelFrame(parent, text="Birth Details", padding=15)
-        birth_frame.pack(fill='x', pady=(0, 10))
-        # This makes the 2nd column (widgets) expand to fill space
-        birth_frame.grid_columnconfigure(1, weight=1)
-
-        ttk.Label(birth_frame, text="Name:").grid(row=0, column=0, sticky='w', pady=5, padx=5)
+        self.generate_command = generate_command
+        self.theme_bg = self.app.current_theme_data.get("bg_dark", "#2e2e2e")
+        self.header_fg = self.app.current_theme_data.get("accent", "#ffcc66")
+        
+        # --- Define all StringVars ---
         self.name_var = tk.StringVar(value="Shashank")
-        ttk.Entry(birth_frame, textvariable=self.name_var).grid(row=0, column=1, sticky='ew', pady=5, padx=5)
-
-        ttk.Label(birth_frame, text="Date (DD/MM/YYYY):").grid(row=1, column=0, sticky='w', pady=5, padx=5)
-        date_frame = ttk.Frame(birth_frame)
-        date_frame.grid(row=1, column=1, sticky='ew', pady=5, padx=5)
-        date_frame.grid_columnconfigure((0, 1, 2), weight=1)
         self.day_var = tk.StringVar(value="14")
         self.month_var = tk.StringVar(value="11")
         self.year_var = tk.StringVar(value="2003")
-        ttk.Spinbox(date_frame, from_=1, to=31, textvariable=self.day_var, width=5).grid(row=0, column=0, sticky='ew', padx=(0, 2))
-        ttk.Spinbox(date_frame, from_=1, to=12, textvariable=self.month_var, width=5).grid(row=0, column=1, sticky='ew', padx=2)
-        ttk.Spinbox(date_frame, from_=1900, to=2100, textvariable=self.year_var, width=8).grid(row=0, column=2, sticky='ew', padx=(2, 0))
-
-        ttk.Label(birth_frame, text="Time (24h format):").grid(row=2, column=0, sticky='w', pady=5, padx=5)
-        time_frame = ttk.Frame(birth_frame)
-        time_frame.grid(row=2, column=1, sticky='ew', pady=5, padx=5)
-        time_frame.grid_columnconfigure((0, 1, 2), weight=1)
         self.hour_var = tk.StringVar(value="19")
         self.minute_var = tk.StringVar(value="41")
         self.second_var = tk.StringVar(value="46")
-        ttk.Spinbox(time_frame, from_=0, to=23, textvariable=self.hour_var, width=5, format="%02.0f").grid(row=0, column=0, sticky='ew', padx=(0, 2))
-        ttk.Spinbox(time_frame, from_=0, to=59, textvariable=self.minute_var, width=5, format="%02.0f").grid(row=0, column=1, sticky='ew', padx=2)
-        ttk.Spinbox(time_frame, from_=0, to=59, textvariable=self.second_var, width=5, format="%02.0f").grid(row=0, column=2, sticky='ew', padx=(2, 0))
+        self.city_var = tk.StringVar(value="Modinagar")
+        self.lat_var = tk.StringVar(value="28.8344")
+        self.lon_var = tk.StringVar(value="77.5699")
+        self.tz_var = tk.StringVar(value="5.5")
+        
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        """Constructs the input form UI."""
+        
+        ttk.Label(self, text="🎯 KUNDLI GENERATOR", style='KundliTitle.TLabel').pack(pady=(0, 20))
+
+        # --- Birth Details Frame ---
+        birth_frame = ttk.LabelFrame(self, text="Birth Details", padding=15, style="Kundli.TLabelframe")
+        birth_frame.pack(fill='x', pady=(0, 10))
+        birth_frame.grid_columnconfigure(1, weight=1)
+        
+        self._create_form_row(birth_frame, "Name:", self.name_var, 0)
+        self._create_datetime_row(birth_frame, 1, 2) # Creates rows 1 and 2
 
         # --- Location Frame ---
-        location_frame = ttk.LabelFrame(parent, text="Location", padding=15)
+        location_frame = ttk.LabelFrame(self, text="Location", padding=15, style="Kundli.TLabelframe")
         location_frame.pack(fill='x', pady=(10, 10))
         location_frame.grid_columnconfigure(1, weight=1)
 
-        ttk.Label(location_frame, text="City:").grid(row=0, column=0, sticky='w', pady=5, padx=5)
-        self.city_var = tk.StringVar(value="Modinagar")
-        ttk.Entry(location_frame, textvariable=self.city_var).grid(row=0, column=1, sticky='ew', pady=5, padx=5)
-
-        ttk.Label(location_frame, text="Latitude:").grid(row=1, column=0, sticky='w', pady=5, padx=5)
-        self.lat_var = tk.StringVar(value="28.8344")
-        ttk.Entry(location_frame, textvariable=self.lat_var).grid(row=1, column=1, sticky='ew', pady=5, padx=5)
-
-        ttk.Label(location_frame, text="Longitude:").grid(row=2, column=0, sticky='w', pady=5, padx=5)
-        self.lon_var = tk.StringVar(value="77.5699")
-        ttk.Entry(location_frame, textvariable=self.lon_var).grid(row=2, column=1, sticky='ew', pady=5, padx=5)
-
-        ttk.Label(location_frame, text="Timezone Offset (UTC):").grid(row=3, column=0, sticky='w', pady=5, padx=5)
-        self.tz_var = tk.StringVar(value="5.5")
-        ttk.Entry(location_frame, textvariable=self.tz_var).grid(row=3, column=1, sticky='ew', pady=5, padx=5)
+        self._create_form_row(location_frame, "City:", self.city_var, 0)
+        self._create_form_row(location_frame, "Latitude:", self.lat_var, 1)
+        self._create_form_row(location_frame, "Longitude:", self.lon_var, 2)
+        self._create_form_row(location_frame, "Timezone (e.g. 5.5):", self.tz_var, 3)
 
         # --- Generate Button ---
-        ttk.Button(parent, text="🎯 Generate Kundli", command=self.generate_kundli, style='Accent.TButton').pack(fill='x', pady=20, ipady=10)
+        ttk.Button(
+            self, text="🎯 Generate Kundli", 
+            command=self.generate_command, # <-- CHANGE THIS
+            style='Accent.TButton'
+        ).pack(fill='x', pady=20, ipady=8)
 
-    def create_results_panel(self, parent: ttk.Frame) -> None:
-        """Creates the results panel with quick info, varga controls, and analysis notebook."""
+    def _create_form_row(self, parent: ttk.Frame, label_text: str, var: tk.StringVar, row: int) -> None:
+        """Helper to create a standard Label-Entry row."""
+        ttk.Label(parent, text=label_text, style="Kundli.TLabel").grid(row=row, column=0, sticky='e', pady=6, padx=10)
+        ttk.Entry(parent, textvariable=var).grid(row=row, column=1, sticky='ew', pady=6, padx=5, ipady=3)
 
-        # --- Top Section (Quick Info & Varga Control) ---
-        top_frame = ttk.Frame(parent)
-        top_frame.pack(fill='x', pady=(0, 10))
+    def _create_datetime_row(self, parent: ttk.Frame, date_row: int, time_row: int) -> None:
+        """Helper to create the complex date and time spinbox rows."""
+        # --- Date Row ---
+        ttk.Label(parent, text="Date (DD/MM/YYYY):", style="Kundli.TLabel").grid(row=date_row, column=0, sticky='e', pady=6, padx=10)
+        date_frame = ttk.Frame(parent, style="Kundli.TFrame")
+        date_frame.grid(row=date_row, column=1, sticky='w', pady=6, padx=5)
+        
+        ttk.Spinbox(date_frame, from_=1, to=31, textvariable=self.day_var, width=4, format="%02.0f", wrap=True, style="Kundli.TSpinbox").pack(side='left', padx=(0, 2))
+        ttk.Label(date_frame, text="/", style="Kundli.TLabel", font=('Segoe UI', 12)).pack(side='left', padx=3)
+        ttk.Spinbox(date_frame, from_=1, to=12, textvariable=self.month_var, width=4, format="%02.0f", wrap=True, style="Kundli.TSpinbox").pack(side='left', padx=2)
+        ttk.Label(date_frame, text="/", style="Kundli.TLabel", font=('Segoe UI', 12)).pack(side='left', padx=3)
+        ttk.Spinbox(date_frame, from_=1900, to=2100, textvariable=self.year_var, width=6, format="%04.0f", wrap=False, style="Kundli.TSpinbox").pack(side='left', padx=(2, 0))
 
-        # Quick Info Display
-        info_frame = ttk.LabelFrame(top_frame, text="Quick Info", padding=10)
-        info_frame.pack(side='left', fill='x', expand=True, padx=(0, 10))
-        self.info_text = tk.Text(info_frame, height=5, width=40, wrap='word', font=('Segoe UI', 9))
-        self.info_text.pack(fill='both', expand=True)
-        self.info_text.insert('1.0', "Generate a chart to see quick information...")
-        self.info_text.config(state='disabled') # Make it read-only
+        # --- Time Row ---
+        ttk.Label(parent, text="Time (24h format):", style="Kundli.TLabel").grid(row=time_row, column=0, sticky='e', pady=6, padx=10)
+        time_frame = ttk.Frame(parent, style="Kundli.TFrame")
+        time_frame.grid(row=time_row, column=1, sticky='w', pady=6, padx=5)
+        
+        ttk.Spinbox(time_frame, from_=0, to=23, textvariable=self.hour_var, width=4, format="%02.0f", wrap=True, style="Kundli.TSpinbox").pack(side='left', padx=(0, 2))
+        ttk.Label(time_frame, text=":", style="Kundli.TLabel", font=('Segoe UI', 12, 'bold')).pack(side='left', padx=2)
+        ttk.Spinbox(time_frame, from_=0, to=59, textvariable=self.minute_var, width=4, format="%02.0f", wrap=True, style="Kundli.TSpinbox").pack(side='left', padx=2)
+        ttk.Label(time_frame, text=":", style="Kundli.TLabel", font=('Segoe UI', 12, 'bold')).pack(side='left', padx=2)
+        ttk.Spinbox(time_frame, from_=0, to=59, textvariable=self.second_var, width=4, format="%02.0f", wrap=True, style="Kundli.TSpinbox").pack(side='left', padx=(2, 0))
 
-        # Varga Controls
-        varga_control_frame = ttk.LabelFrame(top_frame, text="Divisional Chart Controls", padding=10)
-        varga_control_frame.pack(side='left', fill='x', expand=True)
-        ttk.Label(varga_control_frame, text="Select Chart:").pack(pady=(0, 5))
-        self.varga_var = tk.StringVar()
-        varga_combo = ttk.Combobox(varga_control_frame, textvariable=self.varga_var,
-                                  values=list(self.varga_map.keys()), state="readonly",
-                                  width=30)
-        varga_combo.pack(pady=(0,5), fill='x')
-        varga_combo.set("D1 - Rashi") # Default value
-        # Bind the 'change' event to our handler function
-        varga_combo.bind("<<ComboboxSelected>>", self.on_varga_select)
+    def get_inputs(self) -> Dict[str, Any]:
+        """
+        Retrieves and validates all inputs, raising ValueError on failure.
+        """
+        try:
+            inputs = {
+                "name": self.name_var.get(),
+                "day": int(self.day_var.get()),
+                "month": int(self.month_var.get()),
+                "year": int(self.year_var.get()),
+                "hour": int(self.hour_var.get()),
+                "minute": int(self.minute_var.get()),
+                "second": int(self.second_var.get()),
+                "city": self.city_var.get(),
+                "lat": float(self.lat_var.get()),
+                "lon": float(self.lon_var.get()),
+                "tz_offset": float(self.tz_var.get())
+            }
+            return inputs
+        except ValueError as e:
+            raise ValueError(f"Invalid input: Please check all fields. {e}")
 
-        # --- Main Analysis Notebook (with sub-tabs) ---
-        self.analysis_notebook = ttk.Notebook(parent)
-        self.analysis_notebook.pack(fill='both', expand=True)
-
-        # Tab 1: D1 Planetary Positions Table
-        d1_positions_frame = ttk.Frame(self.analysis_notebook, padding=5)
-        self.analysis_notebook.add(d1_positions_frame, text="D1 Positions")
-        columns = ('planet', 'rashi', 'dms', 'nakshatra', 'lord', 'state')
-        self.positions_tree = ttk.Treeview(d1_positions_frame, columns=columns, show='headings')
-        self.positions_tree.heading('planet', text='Planet (Graha)')
-        self.positions_tree.heading('rashi', text='Rashi')
-        self.positions_tree.heading('dms', text='Longitude')
-        self.positions_tree.heading('nakshatra', text='Nakshatra')
-        self.positions_tree.heading('lord', text='Nak Lord')
-        self.positions_tree.heading('state', text='State (R/C)')
-        for col, width in [('planet', 150), ('rashi', 120), ('dms', 100), ('nakshatra', 180), ('lord', 80), ('state', 120)]:
-            self.positions_tree.column(col, width=width, anchor='w')
-        self.positions_tree.pack(fill='both', expand=True)
-
-        # Tab 2: Varga Planetary Positions Table
-        varga_positions_frame = ttk.Frame(self.analysis_notebook, padding=5)
-        self.analysis_notebook.add(varga_positions_frame, text="Varga Positions")
-        varga_columns = ('planet', 'varga_rashi', 'varga_dms', 'details')
-        self.varga_tree = ttk.Treeview(varga_positions_frame, columns=varga_columns, show='headings')
-        self.varga_tree.heading('planet', text='Planet')
-        self.varga_tree.heading('varga_rashi', text='Varga Rashi')
-        self.varga_tree.heading('varga_dms', text='Varga Longitude')
-        self.varga_tree.heading('details', text='Details (e.g., D60 Deity)')
-        self.varga_tree.pack(fill='both', expand=True)
-
-        # Tab 3: Detailed Analysis
-        analysis_frame = ttk.Frame(self.analysis_notebook, padding=5)
-        self.analysis_notebook.add(analysis_frame, text="💡 Detailed Analysis")
-        self.analysis_text = scrolledtext.ScrolledText(analysis_frame, wrap='word', font=('Segoe UI', 11))
-        self.analysis_text.pack(fill='both', expand=True)
-        self.analysis_text.config(state='disabled') # Read-only
-
-        # Tab 4: Varga Meanings (Encyclopedia)
-        varga_desc_frame = ttk.Frame(self.analysis_notebook, padding=5)
-        self.analysis_notebook.add(varga_desc_frame, text="📖 Varga Meanings")
-        self.varga_desc_text = scrolledtext.ScrolledText(varga_desc_frame, wrap='word', font=('Segoe UI', 11))
-        self.varga_desc_text.pack(fill='both', expand=True)
-        self.populate_varga_descriptions() # Fill this on startup
-        self.varga_desc_text.config(state='disabled') # Read-only
-
-    def clear_inputs_and_outputs(self) -> None:
-        """Clears all input fields and output widgets. Called by 'New Chart'."""
-        # 1. Clear input variables
+    def clear(self) -> None:
+        """Clears all input fields to their defaults."""
         self.name_var.set("")
         self.day_var.set("1")
         self.month_var.set("1")
@@ -2210,325 +2739,566 @@ class KundliGeneratorTab(ttk.Frame):
         self.lon_var.set("0.0")
         self.tz_var.set("0.0")
 
-        # 2. Clear output widgets
-        self.info_text.config(state='normal') # Must be 'normal' to edit
+
+class ResultsPanel(ttk.Frame):
+    """
+    A dedicated class for the right-hand results panel.
+    Handles creation, layout, and updating of all output widgets.
+    """
+    def __init__(self, parent: ttk.Frame, app: 'AstroVighatiElite') -> None:
+        super().__init__(parent, padding=(10, 10, 0, 10), style="Kundli.TFrame")
+        self.app = app
+        
+        # --- Theme Colors ---
+        self.theme_bg = self.app.current_theme_data.get("bg_dark", "#2e2e2e")
+        self.theme_fg = self.app.current_theme_data.get("bg_light", "#ffffff")
+        self.select_bg = self.app.current_theme_data.get("accent", "#005f9e")
+        self.header_fg = self.app.current_theme_data.get("accent", "#ffcc66")
+        self.alt_bg = self.app.current_theme_data.get("neutral", "#3a3a3a")
+        self.info_fg = "#cccccc"
+
+        # --- Varga Maps ---
+        self.varga_map: Dict[str, int] = {
+            "D1 - Rashi": 1, "D2 - Hora": 2, "D3 - Drekkana": 3, "D4 - Chaturthamsa": 4,
+            "D7 - Saptamsa": 7, "D9 - Navamsa": 9, "D10 - Dasamsa": 10, "D12 - Dwadasamsa": 12,
+            "D16 - Shodasamsa": 16, "D20 - Vimsamsa": 20, "D24 - Siddhamsa": 24,
+            "D30 - Trimsamsa": 30, "D60 - Shashtyamsa": 60
+        }
+        
+        self.varga_var = tk.StringVar(value="D1 - Rashi")
+
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        """Constructs the results panel UI."""
+        # --- Top Section (Quick Info & Varga Control) ---
+        top_frame = ttk.Frame(self, style="Kundli.TFrame")
+        top_frame.pack(fill='x', pady=(0, 10))
+
+        info_frame = ttk.LabelFrame(top_frame, text="Quick Info", padding=10, style="Kundli.TLabelframe")
+        info_frame.pack(side='left', fill='x', expand=True, padx=(0, 10))
+        
+        self.info_text = scrolledtext.ScrolledText(
+            info_frame, height=5, width=40, wrap='word', font=('Segoe UI', 10),
+            relief='flat', background=self.alt_bg, foreground=self.theme_fg,
+            padx=10, pady=10, borderwidth=0, highlightthickness=0
+        )
+        self.info_text.pack(fill='both', expand=True)
+        self.info_text.insert('1.0', "Generate a chart to see quick information...")
+        self.info_text.config(state='disabled')
+
+        varga_control_frame = ttk.LabelFrame(top_frame, text="Divisional Chart Controls", padding=10, style="Kundli.TLabelframe")
+        varga_control_frame.pack(side='left', fill='x', expand=True)
+        ttk.Label(varga_control_frame, text="Select Chart:", style="Kundli.TLabel").pack(pady=(0, 5), anchor='w')
+        
+        varga_combo = ttk.Combobox(varga_control_frame, textvariable=self.varga_var,
+                                   values=list(self.varga_map.keys()), state="readonly",
+                                   width=30, font=('Segoe UI', 10))
+        varga_combo.pack(pady=(0,5), fill='x', ipady=4)
+        varga_combo.set("D1 - Rashi")
+        varga_combo.bind("<<ComboboxSelected>>", self.on_varga_select)
+
+        # --- Main Analysis Notebook ---
+        self.analysis_notebook = ttk.Notebook(self)
+        self.analysis_notebook.pack(fill='both', expand=True)
+
+        text_widget_style = {
+            "font": ('Segoe UI', 11), "wrap": 'word', "background": self.theme_bg,
+            "foreground": self.theme_fg, "selectbackground": self.select_bg,
+            "selectforeground": self.theme_fg, "insertbackground": self.theme_fg,
+            "relief": 'flat', "borderwidth": 0
+        }
+
+        # --- Tab 1: D1 Planetary Positions Table ---
+        d1_positions_frame = ttk.Frame(self.analysis_notebook, padding=0)
+        self.analysis_notebook.add(d1_positions_frame, text="D1 Positions")
+        d1_tree_scroll = ttk.Scrollbar(d1_positions_frame, orient='vertical')
+        columns = ('planet', 'rashi', 'dms', 'nakshatra', 'lord', 'state')
+        self.positions_tree = ttk.Treeview(d1_positions_frame, columns=columns, show='headings',
+                                           style="Kundli.Treeview", yscrollcommand=d1_tree_scroll.set)
+        d1_tree_scroll.config(command=self.positions_tree.yview)
+        d1_tree_scroll.pack(side='right', fill='y')
+        self.positions_tree.pack(fill='both', expand=True)
+        
+        self.positions_tree.heading('planet', text='Planet (Graha)')
+        self.positions_tree.heading('rashi', text='Rashi')
+        self.positions_tree.heading('dms', text='Longitude')
+        self.positions_tree.heading('nakshatra', text='Nakshatra')
+        self.positions_tree.heading('lord', text='Nak Lord')
+        self.positions_tree.heading('state', text='State (Dignity, R/C)')
+        
+        for col, width in [('planet', 150), ('rashi', 120), ('dms', 100), ('nakshatra', 180), ('lord', 80), ('state', 150)]:
+            self.positions_tree.column(col, width=width, anchor='w', stretch=True)
+
+        # --- Tab 2: Varga Planetary Positions Table ---
+        self.varga_positions_frame = ttk.Frame(self.analysis_notebook, padding=0)
+        self.analysis_notebook.add(self.varga_positions_frame, text="Varga Positions")
+        
+        varga_tree_scroll = ttk.Scrollbar(self.varga_positions_frame, orient='vertical')
+        varga_columns = ('planet', 'varga_rashi', 'varga_dms', 'details')
+        self.varga_tree = ttk.Treeview(self.varga_positions_frame, columns=varga_columns, show='headings',
+                                       style="Kundli.Treeview", yscrollcommand=varga_tree_scroll.set)
+        varga_tree_scroll.config(command=self.varga_tree.yview)
+        varga_tree_scroll.pack(side='right', fill='y')
+        self.varga_tree.pack(fill='both', expand=True)
+
+        self.varga_tree.heading('planet', text='Planet')
+        self.varga_tree.heading('varga_rashi', text='Varga Rashi')
+        self.varga_tree.heading('varga_dms', text='Varga Longitude')
+        self.varga_tree.heading('details', text='Details (e.g., D60 Deity)')
+        
+        for col, width in [('planet', 150), ('varga_rashi', 120), ('varga_dms', 120), ('details', 200)]:
+            self.varga_tree.column(col, width=width, anchor='w', stretch=True)
+
+        # --- Tab 3: Detailed Analysis ---
+        analysis_frame = ttk.Frame(self.analysis_notebook)
+        self.analysis_notebook.add(analysis_frame, text="💡 Detailed Analysis")
+        self.analysis_text = scrolledtext.ScrolledText(analysis_frame, **text_widget_style, padx=10, pady=10)
+        self.analysis_text.pack(fill='both', expand=True)
+        # Define tags for analysis text
+        self.analysis_text.tag_configure("header", font=('Segoe UI', 13, 'bold', 'underline'), foreground=self.header_fg, spacing3=10, spacing1=5)
+        self.analysis_text.tag_configure("sub_header", font=('Segoe UI', 11, 'bold'), foreground=self.info_fg, spacing1=10)
+        self.analysis_text.tag_configure("normal_text", font=('Segoe UI', 10), foreground=self.theme_fg, spacing1=5, lmargin1=10, lmargin2=10)
+        self.analysis_text.tag_configure("bold_text", font=('Segoe UI', 10, 'bold')) # Additive tag
+        self.analysis_text.tag_configure("separator", font=('Courier New', 10), foreground=self.alt_bg, justify='center', spacing1=10, spacing3=10)
+        self.analysis_text.config(state='disabled')
+
+        # --- Tab 4: Varga Meanings (Encyclopedia) ---
+        varga_desc_frame = ttk.Frame(self.analysis_notebook)
+        self.analysis_notebook.add(varga_desc_frame, text="📖 Varga Meanings")
+        self.varga_desc_text = scrolledtext.ScrolledText(varga_desc_frame, **text_widget_style, padx=10, pady=10)
+        self.varga_desc_text.pack(fill='both', expand=True)
+        # Define tags for varga description text
+        self.varga_desc_text.tag_configure("header", font=('Segoe UI', 13, 'bold', 'underline'), foreground=self.header_fg, spacing3=10)
+        self.varga_desc_text.tag_configure("domain", font=('Segoe UI', 10, 'italic'), foreground=self.info_fg, lmargin1=10, lmargin2=10, spacing1=2)
+        self.varga_desc_text.tag_configure("karakas", font=('Segoe UI', 10, 'bold'), foreground=self.theme_fg, lmargin1=10, lmargin2=10, spacing1=2)
+        self.varga_desc_text.tag_configure("bphs_analysis", font=('Segoe UI', 11), foreground=self.theme_fg, spacing1=5, spacing3=5, lmargin1=10, lmargin2=20)
+        self.varga_desc_text.tag_configure("lk_note", font=('Segoe UI', 10, 'italic', 'bold'), foreground=self.info_fg, lmargin1=10, lmargin2=20, spacing1=5, spacing3=15)
+        self.varga_desc_text.tag_configure("separator", font=('Courier New', 10), foreground=self.alt_bg, justify='center', spacing1=5, spacing3=5)
+        
+        self.populate_varga_descriptions()
+        self.varga_desc_text.config(state='disabled')
+
+    def clear(self) -> None:
+        """Clears all output widgets."""
+        self.info_text.config(state='normal')
         self.info_text.delete('1.0', tk.END)
         self.info_text.insert('1.0', "Generate a chart to see quick information...")
         self.info_text.config(state='disabled')
 
-        # Delete all rows from the tables
         self.positions_tree.delete(*self.positions_tree.get_children())
         self.varga_tree.delete(*self.varga_tree.get_children())
 
         self.analysis_text.config(state='normal')
         self.analysis_text.delete('1.0', tk.END)
         self.analysis_text.config(state='disabled')
-
-        # 3. Reset dropdown
         self.varga_var.set("D1 - Rashi")
+        
+    def on_varga_select(self, event: Any = None) -> None:
+        """Callback when the varga combobox is changed."""
+        if not self.app.chart_data:
+            return
+        
+        self.update_varga_positions_display(self.app.chart_data)
+        self.update_detailed_analysis(self.app.chart_data)
+        
+        # Switch to the varga positions tab for clarity
+        self.analysis_notebook.select(self.varga_positions_frame)
+
+    def update_all_displays(self, chart_data: Dict[str, Any]) -> None:
+        """A single function to refresh all display widgets in this tab."""
+        self.update_positions_tree(chart_data)
+        self.update_quick_info(chart_data)
+        self.update_varga_positions_display(chart_data)
+        self.update_detailed_analysis(chart_data)
+        self.analysis_notebook.select(0) # Select D1 Positions tab
+
+    def update_positions_tree(self, chart_data: Dict[str, Any]) -> None:
+        """Populates the D1 planetary positions table with dignity and state."""
+        self.positions_tree.delete(*self.positions_tree.get_children())
+        planet_order = ["Ascendant", "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+        d1_positions = chart_data['positions']
+        sun_longitude = d1_positions.get('Sun', {}).get('longitude', 0)
+
+        for planet_name in planet_order:
+            if planet_name in d1_positions:
+                pos_data = d1_positions[planet_name]
+                planet_full_data = self.app.interpreter.planet_data_cache.get(planet_name, {})
+                sign_name = pos_data['rashi']
+                
+                dignity_str = "Neutral"
+                tags = []
+                if planet_full_data:
+                    dignities = planet_full_data.get('dignities', {})
+                    if sign_name in dignities.get("Exaltation", ""):
+                        dignity_str = "Exalted"; tags.append('Exalted.Treeview')
+                    elif sign_name in dignities.get("Debilitation", ""):
+                        dignity_str = "Debilitated"; tags.append('Debilitated.Treeview')
+                    elif sign_name in dignities.get("Mooltrikona", ""):
+                        dignity_str = "Mooltrikona"; tags.append('Mooltrikona.Treeview')
+                    elif sign_name in dignities.get("Own Sign", ""):
+                        dignity_str = "Own Sign"; tags.append('OwnSign.Treeview')
+                    elif planet_name != "Ascendant":
+                        if sign_name in planet_full_data.get("friendly", []):
+                            dignity_str = "Friendly"
+                        elif sign_name in planet_full_data.get("enemy", []):
+                            dignity_str = "Enemy"
+
+                state_list: List[str] = []
+                speed = pos_data.get('speed', 0.0)
+                if speed < 0 and planet_name not in ["Rahu", "Ketu"]:
+                    state_list.append("R")
+                
+                if self.app.interpreter.get_special_state_analysis(planet_name, speed, sun_longitude, pos_data['longitude']).count("Combust"):
+                    state_list.append("C")
+
+                state_prefix = f"[{', '.join(state_list)}]" if state_list else ""
+                final_state_str = f"{dignity_str} {state_prefix}".strip()
+                
+                self.positions_tree.insert('', 'end', values=(
+                    planet_name, pos_data['rashi'], pos_data['dms'],
+                    pos_data['nakshatra'], pos_data.get('nakshatra_lord', 'N/A'), final_state_str
+                ), tags=tuple(tags))
+
+    def update_quick_info(self, chart_data: Dict[str, Any]) -> None:
+        """Updates the quick info panel with core chart details."""
+        self.info_text.config(state='normal')
+        self.info_text.delete('1.0', tk.END)
+        
+        self.info_text.tag_configure("header", font=('Segoe UI', 10, 'bold'), foreground=self.header_fg)
+        self.info_text.tag_configure("data", font=('Segoe UI', 10), foreground=self.theme_fg)
+        
+        self.info_text.insert('1.0', "═══ QUICK REFERENCE ═══\n\n", "header")
+        
+        d1_positions = chart_data.get('positions')
+        if not d1_positions:
+            self.info_text.insert(tk.END, "No chart data.", "data")
+            self.info_text.config(state='disabled')
+            return
+
+        if 'Ascendant' in d1_positions:
+            asc_info = d1_positions['Ascendant']
+            self.info_text.insert(tk.END, "🔸 Ascendant: ", "header")
+            self.info_text.insert(tk.END, f"{asc_info['rashi']} ({asc_info['dms']})\n", "data")
+        if 'Moon' in d1_positions:
+            moon_info = d1_positions['Moon']
+            self.info_text.insert(tk.END, "🌙 Moon Sign: ", "header")
+            self.info_text.insert(tk.END, f"{moon_info['rashi']}\n", "data")
+            self.info_text.insert(tk.END, "⭐ Birth Star: ", "header")
+            self.info_text.insert(tk.END, f"{moon_info['nakshatra']}\n", "data")
+        if 'Sun' in d1_positions:
+            sun_info = d1_positions['Sun']
+            self.info_text.insert(tk.END, "☀️ Sun Sign:  ", "header")
+            self.info_text.insert(tk.END, f"{sun_info['rashi']}\n", "data")
+
+        self.info_text.config(state='disabled')
+
+    def update_varga_positions_display(self, chart_data: Dict[str, Any]) -> None:
+        """Updates the 'Varga Positions' table."""
+        self.varga_tree.delete(*self.varga_tree.get_children())
+        selected_varga_key = self.varga_var.get()
+        varga_num = self.varga_map.get(selected_varga_key)
+        if not varga_num: return
+        
+        if varga_num == 1:
+            self.varga_tree.insert('', 'end', values=("This is the D1 chart.", "See 'D1 Positions' tab.", "", ""))
+            return
+            
+        varga_data = chart_data.get('varga_cache', {}).get(varga_num)
+        if not varga_data:
+            self.varga_tree.insert('', 'end', values=(f"No D{varga_num} data calculated.", "", "", ""))
+            return
+            
+        planet_order = ["Ascendant", "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
+        for planet_name in planet_order:
+            if planet_name in varga_data:
+                data = varga_data[planet_name]
+                self.varga_tree.insert('', 'end', values=(
+                    planet_name, data['sign_name'], data['dms'], data['details']
+                ))
+
+    def update_detailed_analysis(self, chart_data: Dict[str, Any]) -> None:
+        """Generates and displays the dynamic analysis for the selected Varga."""
+        self.analysis_text.config(state='normal')
+        self.analysis_text.delete('1.0', tk.END)
+
+        selected_varga_key = self.varga_var.get()
+        varga_num = self.varga_map.get(selected_varga_key)
+        if not varga_num: return
+
+        self.analysis_text.insert(tk.END, f"DETAILED ANALYSIS FOR {selected_varga_key.upper()}\n", "header")
+
+        varga_positions = chart_data.get('varga_cache', {}).get(varga_num)
+        d1_positions = chart_data.get('positions')
+        if not varga_positions or not d1_positions:
+            self.analysis_text.insert(tk.END, "Chart data is missing.", "normal_text")
+            self.analysis_text.config(state='disabled')
+            return
+
+        sun_d1_longitude = d1_positions.get('Sun', {}).get('longitude', 0)
+
+        if 'Ascendant' not in varga_positions:
+            self.analysis_text.insert(tk.END, "Ascendant data not available for this Varga.", "normal_text")
+            self.analysis_text.config(state='disabled')
+            return
+
+        varga_asc_sign_num = varga_positions['Ascendant']['sign_num']
+        
+        # (Assuming EnhancedAstrologicalData is available via self.app)
+        SIGNS = self.app.astro_data.SIGNS 
+
+        houses: Dict[int, List[Dict[str, Any]]] = {i: [] for i in range(1, 13)}
+        for planet_name, data in varga_positions.items():
+            if planet_name == 'Ascendant': continue
+            house_num = (data['sign_num'] - varga_asc_sign_num + 12) % 12 + 1
+            data['name'] = planet_name
+            houses[house_num].append(data)
+
+        for house_num in range(1, 13):
+            planets_in_house = houses[house_num]
+            if planets_in_house:
+                self.analysis_text.insert(tk.END, f"\n═══ HOUSE {house_num} ═══\n", "sub_header")
+                
+                conjunction_analysis = self.app.interpreter.get_conjunction_analysis(planets_in_house)
+                if conjunction_analysis:
+                    self._insert_tagged_text(self.analysis_text, conjunction_analysis + "\n", "normal_text", "bold_text")
+
+                for planet_data in planets_in_house:
+                    planet_name = planet_data['name']
+                    
+                    pih_analysis = self.app.interpreter.get_planet_in_house_analysis(planet_name, house_num, varga_num)
+                    self._insert_tagged_text(self.analysis_text, pih_analysis + "\n", "normal_text", "bold_text")
+                    
+                    pis_analysis = self.app.interpreter.get_planet_in_sign_analysis(planet_name, planet_data['sign_name'])
+                    self._insert_tagged_text(self.analysis_text, pis_analysis + "\n", "normal_text", "bold_text")
+
+                    d1_planet_data = d1_positions.get(planet_name)
+                    if d1_planet_data:
+                        special_states = self.app.interpreter.get_special_state_analysis(
+                            planet_name, d1_planet_data.get('speed', 0),
+                            sun_d1_longitude, d1_planet_data['longitude']
+                        )
+                        if special_states:
+                            self._insert_tagged_text(self.analysis_text, special_states + "\n", "normal_text", "bold_text")
+                    
+                    self.analysis_text.insert(tk.END, "─" * 20 + "\n", "separator")
+                self.analysis_text.insert(tk.END, "\n")
+        self.analysis_text.config(state='disabled')
+
+    def _insert_tagged_text(self, text_widget: scrolledtext.ScrolledText, text: str, base_tag: str, bold_tag: str) -> None:
+        """
+        Helper to insert text and apply bold tags based on **markers.
+        This version correctly parses the string.
+        """
+        # Split the text by bold markers, keeping the markers
+        # e.g., "Hello **bold** world" -> ["Hello ", "**bold**", " world"]
+        fragments = re.split(r'(\*\*.*?\*\*)', text)
+        
+        for fragment in fragments:
+            if fragment.startswith('**') and fragment.endswith('**'):
+                # This is a bold fragment
+                # Strip markers and insert with *both* tags
+                clean_fragment = fragment[2:-2]
+                text_widget.insert(tk.END, clean_fragment, (base_tag, bold_tag))
+            elif fragment:
+                # This is a normal fragment
+                text_widget.insert(tk.END, fragment, (base_tag,))
+
+    def populate_varga_descriptions(self) -> None:
+        """Fills the 'Varga Meanings' tab with styled text."""
+        self.varga_desc_text.config(state='normal')
+        self.varga_desc_text.delete('1.0', tk.END)
+        
+        all_descs = self.app.astro_data.get_varga_descriptions()
+        
+        for key in self.varga_map.keys():
+            full_key = key
+            if full_key not in all_descs:
+                varga_num_str = key.split(' ')[0]
+                for desc_key in all_descs.keys():
+                    if desc_key.startswith(varga_num_str):
+                        full_key = desc_key; break
+            
+            desc_data = all_descs.get(full_key)
+            if desc_data:
+                self.varga_desc_text.insert(tk.END, f"{desc_data['title'].upper()}\n", "header")
+                self.varga_desc_text.insert(tk.END, f"Primary Domain: {desc_data.get('domain', 'N/A')}\n", "domain")
+                self.varga_desc_text.insert(tk.END, f"Key Karakas: {desc_data.get('key_karakas', 'N/A')}\n\n", "karakas")
+                self.varga_desc_text.insert(tk.END, f"BPHS Analysis:\n{desc_data.get('bphs_analysis', 'N/A')}\n\n", "bphs_analysis")
+                self.varga_desc_text.insert(tk.END, f"Lal Kitab Note:\n{desc_data.get('lal_kitab_analysis', 'N/A')}\n\n", "lk_note")
+                self.varga_desc_text.insert(tk.END, "—" * 80 + "\n\n", "separator")
+
+        self.varga_desc_text.config(state='disabled')
+
+
+class KundliGeneratorTab(ttk.Frame):
+    """
+    This class is the main coordinator for the "Kundli & Vargas" tab.
+    It creates and manages the InputPanel and ResultsPanel.
+    """
+    def __init__(self, parent: ttk.Notebook, app: 'AstroVighatiElite') -> None:
+        super().__init__(parent)
+        self.app = app
+        
+        # --- Theme Colors ---
+        self.theme_bg = self.app.current_theme_data.get("bg_dark", "#2e2e2e")
+        self.theme_fg = self.app.current_theme_data.get("bg_light", "#ffffff")
+        self.select_bg = self.app.current_theme_data.get("accent", "#005f9e")
+        self.header_fg = self.app.current_theme_data.get("accent", "#ffcc66")
+        self.alt_bg = self.app.current_theme_data.get("neutral", "#3a3a3a")
+        self.info_fg = "#cccccc"  # <-- ADD THIS LINE
+        self.dignity_colors = {
+            'Exalted': '#90EE90', 'Debilitated': '#FF7F7F',
+            'Mooltrikona': '#87CEFA', 'OwnSign': '#FFFFE0',
+        }
+
+        # --- Varga Map for Calculations ---
+        self.full_varga_map: Dict[str, int] = {
+            "D1 - Rashi": 1, "D2 - Hora": 2, "D3 - Drekkana": 3, "D4 - Chaturthamsa": 4,
+            "D5 - Panchamsa": 5, "D6 - Shashthamsa": 6, "D7 - Saptamsa": 7, 
+            "D9 - Navamsa": 9, "D10 - Dasamsa": 10, "D12 - Dwadasamsa": 12,
+            "D16 - Shodasamsa": 16, "D20 - Vimsamsa": 20, "D24 - Siddhamsa": 24,
+            "D30 - Trimsamsa": 30, "D40 - Khavedamsa": 40, 
+            "D45 - Akshavedamsa": 45, "D60 - Shashtyamsa": 60
+        }
+
+        self.create_styles() # Call style creation
+        
+        # --- Main Layout ---
+        main_paned = ttk.PanedWindow(self, orient='horizontal')
+        main_paned.pack(expand=True, fill='both', padx=15, pady=15)
+
+        # --- Left Panel: Inputs ---
+        self.input_panel = InputPanel(main_paned, self.app, self.generate_kundli)
+        main_paned.add(self.input_panel, weight=1)
+
+        # --- Right Panel: Results ---
+        self.results_panel = ResultsPanel(main_paned, self.app)
+        main_paned.add(self.results_panel, weight=3)
+
+    def create_styles(self) -> None:
+        """Configure custom ttk styles for this tab."""
+        style = ttk.Style()
+        style.configure("Kundli.TFrame", background=self.theme_bg)
+        style.configure("Kundli.TLabel", background=self.theme_bg, foreground=self.theme_fg, font=('Segoe UI', 10))
+        style.configure("KundliTitle.TLabel", foreground=self.header_fg, background=self.theme_bg, font=('Segoe UI', 16, 'bold'))
+        style.configure("KundliHeader.TLabel", foreground=self.header_fg, background=self.theme_bg, font=('Segoe UI', 11, 'bold'))
+        style.configure("Kundli.TLabelframe", background=self.theme_bg, bordercolor=self.header_fg)
+        style.configure("Kundli.TLabelframe.Label", foreground=self.header_fg, background=self.theme_bg, font=('Segoe UI', 10, 'bold'))
+
+        # --- Style for Spinbox (IMPROVEMENT) ---
+        style.configure("Kundli.TSpinbox",
+                        background=self.alt_bg,
+                        foreground=self.theme_fg,
+                        fieldbackground=self.alt_bg,
+                        insertcolor=self.theme_fg,
+                        arrowcolor=self.theme_fg,
+                        relief='flat',
+                        borderwidth=0,
+                        font=('Segoe UI', 10))
+        style.map("Kundli.TSpinbox",
+                  background=[('readonly', self.alt_bg)],
+                  fieldbackground=[('readonly', self.alt_bg)],
+                  foreground=[('readonly', self.info_fg)])
+
+        # --- Style for the Treeview ---
+        style.configure("Kundli.Treeview", rowheight=28,
+                        background=self.alt_bg,
+                        fieldbackground=self.alt_bg,
+                        foreground=self.theme_fg, font=('Segoe UI', 10))
+        style.configure("Kundli.Treeview.Heading", font=('Segoe UI', 11, 'bold'),
+                        background=self.theme_bg,
+                        foreground=self.header_fg)
+        style.map("Kundli.Treeview", 
+                  background=[('selected', self.select_bg)],
+                  foreground=[('selected', self.theme_fg)])
+        
+        # --- Dignity Tags ---
+        style.configure('Exalted.Treeview', foreground=self.dignity_colors['Exalted'])
+        style.configure('Debilitated.Treeview', foreground=self.dignity_colors['Debilitated'])
+        style.configure('Mooltrikona.Treeview', foreground=self.dignity_colors['Mooltrikona'])
+        style.configure('OwnSign.Treeview', foreground=self.dignity_colors['OwnSign'])
+
+    def clear_inputs_and_outputs(self) -> None:
+        """Clears all input fields and output widgets. Called by 'New Chart'."""
+        self.input_panel.clear()
+        self.results_panel.clear()
 
     def generate_kundli(self) -> None:
         """
-        Main logic function: This is the core workflow when the user
-        clicks "Generate Kundli".
+        Main logic function: Coordinates data retrieval, calculation, and display.
         """
         try:
-            # --- 1. Gather All Inputs ---
-            inputs = {
-                "name": self.name_var.get(),
-                "day": self.day_var.get(),
-                "month": self.month_var.get(),
-                "year": self.year_var.get(),
-                "hour": self.hour_var.get(),
-                "minute": self.minute_var.get(),
-                "second": self.second_var.get(),
-                "city": self.city_var.get(),
-                "lat": self.lat_var.get(),
-                "lon": self.lon_var.get(),
-                "tz_offset": self.tz_var.get()
-            }
-            # Convert to a datetime object (will raise ValueError if invalid)
+            # 1. Get validated inputs from the InputPanel
+            inputs = self.input_panel.get_inputs()
+            
             birth_dt_local = datetime(
-                int(inputs['year']), int(inputs['month']), int(inputs['day']),
-                int(inputs['hour']), int(inputs['minute']), int(inputs['second'])
+                inputs['year'], inputs['month'], inputs['day'],
+                inputs['hour'], inputs['minute'], inputs['second']
             )
-            lat, lon, tz_offset = float(inputs['lat']), float(inputs['lon']), float(inputs['tz_offset'])
+            lat, lon, tz_offset = inputs['lat'], inputs['lon'], inputs['tz_offset']
 
-            # --- 2. Calculate D1 Positions ---
+            # 2. Run Calculations
             self.app.status_var.set("Calculating Sidereal positions (Lahiri)...")
+            self.app.root.update_idletasks()
+            
             d1_positions = self.app.calculator.calculate_planet_positions(birth_dt_local, lat, lon, tz_offset)
             if not d1_positions:
                 self.app.status_var.set("Calculation failed. Please check inputs and console.")
                 return
 
-            # --- 3. Pre-calculate ALL Varga Positions (for performance) ---
-            self.app.status_var.set("Caching all 17 divisional charts...")
-            varga_cache = self.calculate_all_varga_positions(d1_positions)
-            self.app.status_var.set("All Varga charts cached.")
+            self.app.status_var.set("Caching all divisional charts...")
+            self.app.root.update_idletasks()
 
-            # --- 4. Store in Central State ---
-            # This makes the data available to all other tabs (Dasha, Vighati)
+            varga_cache = self.calculate_all_varga_positions(d1_positions)
+            
+            # 3. Store data in the main app
             self.app.chart_data = {
                 'inputs': inputs,
                 'birth_dt_local': birth_dt_local,
-                'positions': d1_positions,  # This is the D1 chart
-                'varga_cache': varga_cache  # This holds all other D-charts
+                'positions': d1_positions,
+                'varga_cache': varga_cache
             }
 
-            # --- 5. Update all displays in this tab ---
-            self.update_all_displays()
-            self.app.status_var.set("Kundli generated successfully!")
-            messagebox.showinfo("Success", "Kundli generated successfully using the Sidereal (Lahiri) Engine!")
+            # 4. Tell the ResultsPanel to update itself
+            self.results_panel.update_all_displays(self.app.chart_data)
+            self.app.status_var.set(f"Kundli generated successfully for {inputs['name']}!")
 
-        except ValueError:
-            messagebox.showerror("Input Error", "Please ensure all fields have valid numbers (e.g., Date, Time, Lat, Lon).")
-            self.app.chart_data = {} # Clear data on fail
+        except ValueError as e: # Catches errors from input_panel.get_inputs()
+            messagebox.showerror("Input Error", str(e))
+            self.app.chart_data = {}
         except Exception as e:
             messagebox.showerror("Error", f"An unexpected error occurred:\n{str(e)}")
-            self.app.chart_data = {} # Clear data on fail
+            self.app.chart_data = {}
             self.app.status_var.set("Error generating Kundli")
+            import traceback
+            traceback.print_exc()
 
     def calculate_all_varga_positions(self, d1_positions: Dict[str, Dict[str, Any]]) -> Dict[int, Dict[str, Dict[str, Any]]]:
-        """
-        OPTIMIZATION: This helper function pre-calculates all 17 Varga
-        charts at once and stores them in a dictionary (cache).
-
-        This makes switching between Vargas in the dropdown list
-        INSTANTANEOUS.
-
-        Args:
-            d1_positions (dict): The D1 positions from AstronomicalCalculator.
-
-        Returns:
-            dict: A cache, e.g., {1: {...D1 data...}, 9: {...D9 data...}, ...}
-        """
+        """Pre-calculates all Varga charts and stores them in a cache."""
         cache: Dict[int, Dict[str, Dict[str, Any]]] = {}
-        # Use the *full* map to calculate all charts, even hidden ones
+        
+        # (Assuming EnhancedAstrologicalData and decimal_to_dms are in scope via self.app)
+        SIGNS = self.app.astro_data.SIGNS
+        #decimal_to_dms = self.decimal_to_dms  Example path
+        decimal_to_dms(SIGNS)
+
         for varga_name, varga_num in self.full_varga_map.items():
             varga_pos_dict: Dict[str, Dict[str, Any]] = {}
             for planet_name, d1_data in d1_positions.items():
-                # Call the VargaCalculator for each planet
                 varga_sign_num, varga_lon_dec, details = self.app.varga_calculator.calculate_varga_position(
                     varga_num, d1_data['degree_in_rashi'], d1_data['rashi_num']
                 )
                 if varga_sign_num is not None:
-                    # Store the results
                     varga_pos_dict[planet_name] = {
                         'sign_num': varga_sign_num,
-                        'sign_name': EnhancedAstrologicalData.SIGNS[varga_sign_num],
+                        'sign_name': SIGNS[varga_sign_num],
                         'longitude_dec': varga_lon_dec,
                         'dms': decimal_to_dms(varga_lon_dec),
                         'details': details
                     }
             cache[varga_num] = varga_pos_dict
         return cache
-
-    def on_varga_select(self, event: Any = None) -> None:
-        """
-        Callback for when the varga combobox is changed.
-        Refreshes only the varga-dependent displays (Varga table and Analysis).
-        """
-        if not self.app.chart_data: # Do nothing if no chart is loaded
-            return
-        self.update_varga_positions_display()
-        self.update_detailed_analysis()
-
-    def update_all_displays(self, event: Any = None) -> None:
-        """A single function to refresh all display widgets in this tab."""
-        if not self.app.chart_data:
-            return
-
-        self.update_positions_tree()
-        self.update_quick_info()
-        self.update_varga_positions_display()
-        self.update_detailed_analysis()
-
-    def update_positions_tree(self) -> None:
-        """Populates the D1 planetary positions table."""
-        self.positions_tree.delete(*self.positions_tree.get_children())
-        planet_order = ["Ascendant", "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
-
-        d1_positions = self.app.chart_data['positions']
-        sun_longitude = d1_positions.get('Sun', {}).get('longitude', 0)
-
-        for planet_name in planet_order:
-            if planet_name in d1_positions:
-                pos_data = d1_positions[planet_name]
-
-                # Check for special states (Retrograde, Combust)
-                state_list: List[str] = []
-                speed = pos_data.get('speed', 0.0)
-                if speed < 0:
-                    state_list.append("R") # Retrograde
-
-                # Use the InterpretationEngine to check for combustion
-                if self.app.interpreter.get_special_state_analysis(planet_name, speed, sun_longitude, pos_data['longitude']).count("Combust"):
-                    state_list.append("C") # Combust
-
-                state_str = " ".join(state_list)
-
-                # Insert the data as a new row in the table
-                self.positions_tree.insert('', 'end', values=(
-                    planet_name, pos_data['rashi'], pos_data['dms'],
-                    pos_data['nakshatra'], pos_data.get('nakshatra_lord', 'N/A'), state_str
-                ))
-
-    def update_quick_info(self) -> None:
-        """Updates the quick info panel with core chart details."""
-        self.info_text.config(state='normal')
-        self.info_text.delete('1.0', tk.END)
-        info = "═══ QUICK REFERENCE ═══\n\n"
-
-        d1_positions = self.app.chart_data['positions']
-
-        if 'Ascendant' in d1_positions:
-            asc_info = d1_positions['Ascendant']
-            info += f"🔸 Ascendant: {asc_info['rashi']} ({asc_info['dms']})\n"
-        if 'Moon' in d1_positions:
-            moon_info = d1_positions['Moon']
-            info += f"🌙 Moon Sign: {moon_info['rashi']}\n"
-            info += f"⭐ Birth Star: {moon_info['nakshatra']}\n"
-        if 'Sun' in d1_positions:
-            sun_info = d1_positions['Sun']
-            info += f"☀️ Sun Sign: {sun_info['rashi']}\n"
-
-        self.info_text.insert('1.0', info)
-        self.info_text.config(state='disabled')
-
-    def update_varga_positions_display(self) -> None:
-        """
-        Updates the 'Varga Positions' table based on the dropdown selection.
-        This function READS from the pre-calculated cache.
-        """
-        self.varga_tree.delete(*self.varga_tree.get_children())
-        selected_varga_key = self.varga_var.get()
-        varga_num = self.varga_map[selected_varga_key]
-
-        if varga_num == 1:
-             # D1 is special, its data is in the other tab
-             self.varga_tree.insert('', 'end', values=("This is the D1 chart.", "See 'D1 Positions' tab.", "", ""))
-             return
-
-        # Get the pre-calculated data from the cache
-        varga_data = self.app.chart_data['varga_cache'][varga_num]
-        planet_order = ["Ascendant", "Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"]
-
-        for planet_name in planet_order:
-            if planet_name in varga_data:
-                data = varga_data[planet_name]
-                # Insert the row into the Varga table
-                self.varga_tree.insert('', 'end', values=(
-                    planet_name, data['sign_name'], data['dms'], data['details']
-                ))
-
-    def update_detailed_analysis(self) -> None:
-        """
-        Generates and displays the dynamic, multi-layered analysis
-        for the currently selected Varga chart.
-        """
-        self.analysis_text.config(state='normal')
-        self.analysis_text.delete('1.0', tk.END)
-
-        selected_varga_key = self.varga_var.get()
-        varga_num = self.varga_map[selected_varga_key]
-
-        analysis_str = f"╔═══════ DETAILED ANALYSIS FOR {selected_varga_key.upper()} ═══════╗\n\n"
-
-        # --- 1. Get pre-calculated Varga positions from cache ---
-        varga_positions = self.app.chart_data['varga_cache'][varga_num]
-
-        # --- 2. Get D1 data (for Retro/Combust states) ---
-        d1_positions = self.app.chart_data['positions']
-        sun_d1_longitude = d1_positions.get('Sun', {}).get('longitude', 0)
-
-        # --- 3. Find the Varga Ascendant's sign number ---
-        if 'Ascendant' not in varga_positions:
-            analysis_str += "Ascendant data not available for this Varga."
-            self.analysis_text.insert('1.0', analysis_str)
-            self.analysis_text.config(state='disabled')
-            return
-
-        varga_asc_sign_num = varga_positions['Ascendant']['sign_num']
-
-        # --- 4. Group all other planets by their Varga house ---
-        houses: Dict[int, List[Dict[str, Any]]] = {i: [] for i in range(1, 13)} # Create 12 empty lists
-        for planet_name, data in varga_positions.items():
-            if planet_name == 'Ascendant':
-                continue # Skip the Ascendant itself
-
-            # This is the correct, robust way to calculate the house number
-            # (Sign Number - Ascendant Sign Number) + 1, with wrap-around
-            house_num = (data['sign_num'] - varga_asc_sign_num + 12) % 12 + 1
-
-            # Add the planet's name to its data dict (needed for the interpreter)
-            data['name'] = planet_name
-            houses[house_num].append(data)
-
-
-        # --- 5. Generate analysis for each house (1 through 12) ---
-        for house_num in range(1, 13):
-            planets_in_house = houses[house_num]
-
-            if planets_in_house: # Only print if the house is not empty
-                analysis_str += f"═══ HOUSE {house_num} ═══\n"
-
-                # A. Conjunction analysis first
-                conjunction_analysis = self.app.interpreter.get_conjunction_analysis(planets_in_house)
-                if conjunction_analysis:
-                    analysis_str += conjunction_analysis + "\n\n"
-
-                # B. Individual planet analysis
-                for planet_data in planets_in_house:
-                    planet_name = planet_data['name']
-
-                    # Call the interpreter for Planet-in-House
-                    analysis_str += self.app.interpreter.get_planet_in_house_analysis(
-                        planet_name, house_num, varga_num
-                    ) + "\n"
-
-                    # Call the interpreter for Planet-in-Sign
-                    analysis_str += self.app.interpreter.get_planet_in_sign_analysis(
-                        planet_name, planet_data['sign_name']
-                    ) + "\n"
-
-                    # Call the interpreter for Special States (R/C)
-                    # Note: Special states are *always* taken from the D1 chart!
-                    d1_planet_data = d1_positions[planet_name]
-                    special_states = self.app.interpreter.get_special_state_analysis(
-                        planet_name, d1_planet_data.get('speed', 0),
-                        sun_d1_longitude,
-                        d1_planet_data['longitude']
-                    )
-                    if special_states:
-                        analysis_str += special_states + "\n"
-
-                    analysis_str += "─" * 20 + "\n" # Separator
-                analysis_str += "\n" # Blank line after the house
-
-        # --- 6. Write the final string to the text box ---
-        self.analysis_text.insert('1.0', analysis_str)
-        self.analysis_text.config(state='disabled')
-
-    def populate_varga_descriptions(self) -> None:
-        """
-        Fills the 'Varga Meanings' tab with information from the
-        data class. This runs once on startup.
-        """
-        self.varga_desc_text.config(state='normal')
-        self.varga_desc_text.delete('1.0', tk.END)
-
-        all_descs = EnhancedAstrologicalData.get_varga_descriptions()
-        full_text = ""
-
-        # Loop through the *display* map to get the correct order
-        for key in self.varga_map.keys():
-            if key in all_descs:
-                desc_data = all_descs[key]
-                full_text += f"╔═══════ {desc_data['title'].upper()} ═══════╗\n\n"
-                full_text += f"{desc_data['description']}\n\n\n"
-
-        self.varga_desc_text.insert('1.0', full_text)
-        self.varga_desc_text.config(state='disabled')
 
 #===================================================================================================
 # TAB 2-8: OTHER TABS
@@ -3110,93 +3880,6 @@ class EnhancedVighatiTab(ttk.Frame):
             import traceback
             traceback.print_exc() # Log detailed error to console
 
-# --- Helper Class: Spinbox (for the custom UI) ---
-class Spinbox(ttk.Frame):
-    """A ttk-themed Spinbox alternative using Entry and Buttons."""
-    def __init__(self, master=None, from_=0, to=100, textvariable=None, width=5, format="%02.0f", wrap=False, **kwargs):
-        super().__init__(master, **kwargs)
-        self.textvariable = textvariable if textvariable else tk.StringVar()
-        self.from_ = from_
-        self.to = to
-        self.format = format
-        self.wrap = wrap
-
-        # Validate initial value
-        try:
-            initial_val = int(self.textvariable.get())
-            clamped_val = max(self.from_, min(self.to, initial_val))
-            if clamped_val != initial_val:
-                 self.textvariable.set(self.format % clamped_val)
-            elif self.textvariable.get() != (self.format % clamped_val):
-                 self.textvariable.set(self.format % clamped_val)
-        except (ValueError, tk.TclError):
-             self.textvariable.set(self.format % self.from_)
-
-        self.entry = ttk.Entry(self, textvariable=self.textvariable, width=width, justify='center')
-        s = ttk.Style()
-        s.configure('Small.TButton', padding=1)
-        self.btn_up = ttk.Button(self, text="▲", width=-1, command=self._increment, style='Small.TButton')
-        self.btn_down = ttk.Button(self, text="▼", width=-1, command=self._decrement, style='Small.TButton')
-
-        self.entry.grid(row=0, column=0, rowspan=2, sticky='nsew')
-        self.btn_up.grid(row=0, column=1, sticky='ns') # Changed to ns
-        self.btn_down.grid(row=1, column=1, sticky='ns') # Changed to ns
-
-        self.grid_rowconfigure((0, 1), weight=1)
-        self.grid_columnconfigure(0, weight=1)
-
-        self.textvariable.trace_add("write", self._validate)
-        self.entry.bind("<MouseWheel>", self._on_scroll, "+")
-        self.entry.bind("<Button-4>", self._on_scroll, "+")
-        self.entry.bind("<Button-5>", self._on_scroll, "+")
-
-    def _validate(self, *args):
-        try:
-            value_str = self.textvariable.get()
-            if not value_str:
-                 # Don't revert immediately, allow user to type
-                 return
-            value = int(value_str)
-            current_formatted = self.format % value
-            if not (self.from_ <= value <= self.to):
-                 clamped = max(self.from_, min(self.to, value))
-                 clamped_formatted = self.format % clamped
-                 if self.textvariable.get() != clamped_formatted:
-                      self.after_idle(lambda: self.textvariable.set(clamped_formatted))
-            # Don't reformat while user is typing (e.g., typing '1' shouldn't become '01')
-            # Re-formatting is handled by increment/decrement/blur
-        except (ValueError, tk.TclError):
-             # Handle partial input like '-'
-             if value_str != '-':
-                  self.after_idle(lambda: self.textvariable.set(self.format % self.from_))
-
-    def _increment(self):
-        try:
-            value = int(self.textvariable.get())
-            if value < self.to:
-                self.textvariable.set(self.format % (value + 1))
-            elif self.wrap:
-                self.textvariable.set(self.format % self.from_)
-        except (ValueError, tk.TclError):
-            self.textvariable.set(self.format % self.from_)
-
-    def _decrement(self):
-        try:
-            value = int(self.textvariable.get())
-            if value > self.from_:
-                self.textvariable.set(self.format % (value - 1))
-            elif self.wrap:
-                 self.textvariable.set(self.format % self.to)
-        except (ValueError, tk.TclError):
-            self.textvariable.set(self.format % self.from_)
-
-    def _on_scroll(self, event):
-        if event.num == 4 or (hasattr(event, 'delta') and event.delta > 0):
-            self._increment()
-            return "break"
-        elif event.num == 5 or (hasattr(event, 'delta') and event.delta < 0):
-            self._decrement()
-            return "break"        
 
 class TransitCalculatorTab(ttk.Frame):
     """
